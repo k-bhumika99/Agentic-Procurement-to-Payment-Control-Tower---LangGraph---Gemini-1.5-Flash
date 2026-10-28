@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Agent 4: Purchase Order Generation - Control Tower{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="header-title">
+    <h1>Agent 4: Automated Purchase Order Issuance</h1>
+    <p>Generates legally binding, tamper-evident Purchase Orders upon authorized managerial approval, prevents duplicate commitments, and notifies ERP warehouse systems.</p>
+  </div>
+  <div class="header-actions">
+    {% if existing_po %}
+      <a href="{{ url_for('print_po', po_id=existing_po.id) }}" target="_blank" class="btn btn-secondary">
+        <span>🖨️</span> View & Print PO
+      </a>
+      <a href="{{ url_for('download_po_pdf', po_id=existing_po.id) }}" class="btn btn-primary">
+        <span>📥</span> Download PDF
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Workflow Progress Indicator -->
+<div class="workflow-tracker">
+  <div class="step-node completed">✓ 1. Requirements</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 2. Vendor Comparison</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 3. Budget & Policy</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node active">4. PO Issuance (Active)</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">5. Invoice Matching</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">6. Payment</div>
+</div>
+
+{% if current_pr %}
+  {% if existing_po %}
+    <!-- Official Generated PO Card -->
+    <div class="card" style="border: 2px solid var(--btn-primary);">
+      <div class="card-header pastel-peach">
+        <div>
+          <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">Official Purchase Order</span>
+          <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">
+            {{ existing_po.id }}
+          </h2>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span class="badge badge-success">Issued &amp; Registered</span>
+          <span class="badge badge-info">ERP Synced</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid-2" style="margin-bottom: 24px;">
+          <!-- Buyer Information -->
+          <div style="background: var(--bg-ivory); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">
+              Buyer Organization
+            </div>
+            <h4 style="font-size: 15px; font-weight: 700;">Procure Tower Enterprise Corp</h4>
+            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; line-height: 1.6;">
+              Department: <strong>{{ current_pr.department }}</strong><br>
+              Requisition Reference: <strong>{{ current_pr.id }}</strong><br>
+              Issued Date: <strong>{{ existing_po.created_at }}</strong>
+            </div>
+          </div>
+
+          <!-- Supplier Information -->
+          <div style="background: var(--bg-ivory); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">
+              Awarded Supplier (Vendor)
+            </div>
+            <h4 style="font-size: 15px; font-weight: 700;">{{ vendor.name }}</h4>
+            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; line-height: 1.6;">
+              Supplier Email: <strong>{{ vendor.contact_email }}</strong><br>
+              Warranty Period: <strong>{{ vendor.warranty_years }} Years Enterprise SLA</strong><br>
+              Vendor Rating: <strong>⭐ {{ vendor.rating }} / 5.0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Line Item Table -->
+        <div class="table-responsive" style="margin-bottom: 20px;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Item Description</th>
+                <th>Specifications</th>
+                <th>Quantity</th>
+                <th>Unit Rate</th>
+                <th>Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>{{ existing_po.item_name }}</strong></td>
+                <td>{{ vendor.product_name }} &bull; {{ vendor.product_specs }}</td>
+                <td><strong>{{ existing_po.quantity }}</strong> units</td>
+                <td>{{ existing_po.formatted_unit_price }}</td>
+                <td><strong style="color: #28344A; font-size: 15px;">{{ existing_po.formatted_total }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 20px;">
+          <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;">
+            <div><strong>Delivery Terms:</strong> {{ existing_po.delivery_terms }}</div>
+            <div><strong>Payment Terms:</strong> {{ existing_po.payment_terms }}</div>
+          </div>
+          <div style="background: var(--pastel-mint); padding: 14px; border-radius: var(--radius-sm); font-size: 13px; color: #1E4F3B;">
+            <strong>ERP Warehouse Status:</strong> Goods Receipt Note (GRN) placeholder created in automated ERP inventory system. Ready for 3-way matching in Agent 5.
+          </div>
+        </div>
+
+        <!-- Next Action Button -->
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+          <a href="{{ url_for('agent_invoice_matching', pr_id=current_pr.id) }}" class="btn btn-primary" style="flex: 1; padding: 12px;">
+            Proceed to Agent 5: Invoice Matching &rarr;
+          </a>
+          <a href="{{ url_for('print_po', po_id=existing_po.id) }}" target="_blank" class="btn btn-secondary" style="padding: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            📄 View &amp; Download Document
+          </a>
+        </div>
+      </div>
+    </div>
+
+  {% elif current_pr.status == 'purchase_approved' %}
+    <!-- Eligible for Generation -->
+    <div class="card">
+      <div class="card-header pastel-peach">
+        <h3><span>📄</span> Authorized Purchase Order Generation</h3>
+        <span class="badge badge-success">Manager Approved</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 20px;">
+          Purchase Request <strong>{{ current_pr.id }}</strong> has been officially approved. You can now issue the Purchase Order to <strong>{{ vendor.name }}</strong> for <strong>{{ current_pr.quantity }} units</strong> of {{ current_pr.item_name }}.
+        </p>
+
+        <form action="{{ url_for('agent_purchase_order') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="pr_id" value="{{ current_pr.id }}">
+
+          <div class="form-row" style="margin-bottom: 16px;">
+            <div class="form-group">
+              <label class="form-label">Delivery Terms</label>
+              <input type="text" name="delivery_terms" class="form-control" value="FOB Destination, Enterprise Tech Park, Dock 4 (Within {{ vendor.delivery_days }} days)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Commercial Payment Terms</label>
+              <input type="text" name="payment_terms" class="form-control" value="Net 30 Days upon 3-Way Invoice Matching & Acceptance">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+            🚀 Generate & Dispatch Official Purchase Order
+          </button>
+        </form>
+      </div>
+    </div>
+
+  {% else %}
+    <!-- Blocked / Rejected State -->
+    {% if current_pr.status == 'purchase_rejected' %}
+      <!-- REJECTED: Show reason prominently -->
+      <div class="card" style="border: 2px solid #D96B7E; margin-bottom: 16px;">
+        <div class="card-header" style="background: #FDE8EC; border-bottom: 1px solid #F5C6CE;">
+          <h3 style="color: #8B1E3A;"><span>❌</span> Purchase Request Rejected</h3>
+          <span class="badge badge-danger">Blocked — PO Cannot Be Issued</span>
+        </div>
+        <div class="card-body">
+          <div style="background: #FDE8EC; border-left: 4px solid #D96B7E; padding: 14px 18px; border-radius: 6px; margin-bottom: 16px;">
+            <div style="font-size: 12px; text-transform: uppercase; color: #7B2035; font-weight: 700; margin-bottom: 6px;">
+              Rejection Decision
+            </div>
+            <div style="font-size: 15px; font-weight: 700; color: #5C1626; margin-bottom: 4px;">
+              ❌ Rejected by {{ current_pr.approver_name or 'Manager' }}
+            </div>
+            {% if current_pr.approval_decided_at %}
+            <div style="font-size: 12px; color: #7B2035; margin-bottom: 10px;">
+              Decision Date: {{ current_pr.approval_decided_at[:10] if current_pr.approval_decided_at else '—' }}
+            </div>
+            {% endif %}
+            {% if current_pr.approval_comment %}
+            <div style="font-size: 13.5px; color: #5C1626; background: #FBCFD8; padding: 10px 14px; border-radius: 4px; font-style: italic;">
+              "{{ current_pr.approval_comment }}"
+            </div>
+            {% endif %}
+          </div>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+            This purchase request has been formally rejected. Purchase Order issuance is permanently blocked for this request.
+            To address the concerns above, please submit a new purchase request with the necessary adjustments.
+          </p>
+          <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('agent_requirements') }}" class="btn btn-primary">
+              + Submit New Purchase Request
+            </a>
+            <a href="{{ url_for('agent_budget_policy', pr_id=current_pr.id) }}" class="btn btn-secondary">
+              View Budget &amp; Policy Details
+            </a>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      <!-- PENDING: Awaiting Approval -->
+      <div class="card" style="border-left: 4px solid #D9822B;">
+        <div class="card-header pastel-peach">
+          <h3><span>⏳</span> Purchase Order Issuance Locked</h3>
+          <span class="badge badge-warning">Awaiting Approval</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+            Purchase orders cannot be generated until authorized by an authorized manager or executive.
+            Current Status: <strong>{{ current_pr.status.replace('_', ' ').title() }}</strong>.
+          </p>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <a href="{{ url_for('approvals') }}" class="btn btn-primary">
+              Go to Approval Center to Authorize &rarr;
+            </a>
+            <a href="{{ url_for('agent_budget_policy', pr_id=current_pr.id) }}" class="btn btn-secondary">
+              Review in Agent 3 (Budget &amp; Policy) &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📄</div>
+    <h3>No Purchase Request Active</h3>
+    <p>Please create and validate a purchase request to generate an official Purchase Order.</p>
+    <a href="{{ url_for('agent_requirements') }}" class="btn btn-primary">Go to Agent 1: Requirements</a>
+  </div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Procurement-to-Payment Control Tower</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .landing-body {
+      background-color: var(--bg-ivory);
+      color: var(--text-primary);
+    }
+
+    .landing-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 48px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .hero-section {
+      text-align: center;
+      padding: 0 24px;
+      min-height: calc(100vh - 73px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: url("{{ url_for('static', filename='images/home_bg.png') }}") no-repeat center center;
+      background-size: cover;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .hero-content {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background-color: var(--pastel-blue);
+      color: #1F457A;
+      font-weight: 600;
+      font-size: 12px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+
+    .hero-title {
+      font-size: 44px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-desc {
+      font-size: 17px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .hero-cta {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      max-width: 1140px;
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+
+    .feature-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .feature-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 18px;
+    }
+
+    .feature-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    .workflow-section {
+      background: #FFFFFF;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      padding: 70px 24px;
+      text-align: center;
+    }
+
+    .section-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      font-size: 15px;
+      margin-bottom: 40px;
+    }
+
+    .pipeline-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .pipeline-step {
+      background: var(--bg-ivory);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .pipeline-arrow {
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .benefits-section {
+      padding: 70px 24px;
+      max-width: 1140px;
+      margin: 0 auto;
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .benefit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      border-radius: var(--radius-md);
+    }
+
+    .benefit-check {
+      background: var(--status-success-bg);
+      color: var(--status-success-text);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .landing-footer {
+      background: #FFFFFF;
+      border-top: 1px solid var(--border-color);
+      padding: 30px 48px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body class="landing-body">
+  <!-- Navigation -->
+  <nav class="landing-nav">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="logo-icon" style="width: 36px; height: 36px; font-size: 18px;">🏢</div>
+      <div>
+        <h2 style="font-size: 16px; font-weight: 700;">Procure Tower</h2>
+        <span style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">AGENTIC P2P PLATFORM</span>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#benefits">Benefits</a>
+      <a href="{{ url_for('signin') }}" class="btn btn-secondary">Sign In</a>
+      <a href="{{ url_for('signup') }}" class="btn btn-primary">Get Started</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section with Background Image -->
+  <header class="hero-section">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span>🤖</span> Agentic Procurement-to-Payment Control Tower &bull; LangGraph Orchestrated
+      </div>
+      <h1 class="hero-title">Intelligent Procurement.<br>Seamless Payments.</h1>
+      <p class="hero-desc">
+        An intelligent multi-agent platform that streamlines procurement, compares vendors, validates budgets, manages
+        approvals, matches invoices, and coordinates payments through one transparent workflow.
+      </p>
+      <div class="hero-cta">
+        <a href="{{ url_for('signup') }}" class="btn btn-primary">Get Started Free</a>
+        <a href="{{ url_for('signin') }}" class="btn btn-secondary">Sign In to Tower</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Features Section -->
+  <section id="features" style="padding: 20px 0;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <h2 class="section-title">Six Specialized Autonomous Agents</h2>
+      <p class="section-desc">Each stage of procurement handled with dedicated algorithmic intelligence and strict
+        policy governance.</p>
+    </div>
+
+    <div class="features-grid">
+      <!-- Card 1 -->
+      <div class="feature-card">
+        <div class="feature-icon-box" style="background: var(--pastel-blue);">📝</div>
+        <h3>1. Smart Requirement Analysis</h3>
+        <p>Parses structured forms and natural language requests, extracting hardware specifications, deadlines, and
+          budget constraints into standardized schemas.</p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="feature-card">
+        <div class="feature-icon-box" style="background: var(--pastel-lavender);">⚖️</div>
+        <h3>2. Intelligent Vendor Comparison</h3>
+        <p>Evaluates suppliers against mandatory criteria, eliminates non-compliant proposals, and ranks eligible
+          suppliers using multi-criteria weighted scoring.</p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="feature-card">
+        <div class="feature-icon-box" style="background: var(--pastel-mint);">💰</div>
+        <h3>3. Budget and Policy Validation</h3>
+        <p>Enforces department fiscal quotas, determines required executive approval tiers, and checks compliance before
+          committing capital.</p>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="feature-card">
+        <div class="feature-icon-box" style="background: var(--pastel-peach);">📄</div>
+        <h3>4. Automated Purchase Orders</h3>
+        <p>Generates tamper-evident Purchase Orders upon authorized approval, prevents duplication, and synchronizes
+          expected inventory receipts.</p>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="feature-card">
+        <div class="feature-icon-box" style="background: var(--pastel-blush);">🔍</div>
+        <h3>5. Invoice Matching & Exceptions</h3>
+        <p>Extracts supplier PDF/image invoices using OCR, executes strict 3-way matching across PO and Goods Receipts,
+          and flags discrepancies.</p>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="feature-card">
+        <div class="feature-icon-box" style="background: var(--pastel-bluegreen);">💳</div>
+        <h3>6. Controlled Payment Processing</h3>
+        <p>Enforces payment authorizations, verifies idempotency keys to stop duplicate payments, and executes simulated
+          settlement with verifiable audit records.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="workflow-section">
+    <h2 class="section-title">The End-to-End Orchestrated Pipeline</h2>
+    <p class="section-desc">Managed through stateful LangGraph workflow checkpointing with automatic data handoffs.</p>
+
+    <div class="pipeline-wrapper">
+      <div class="pipeline-step" style="border-left: 4px solid var(--btn-primary);">Purchase Request</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step">Vendor Comparison</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step">Budget Validation</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step" style="background: var(--pastel-lavender);">Manager Approval</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step">Purchase Order</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step">Invoice Matching</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step" style="border-right: 4px solid #34745A; background: var(--pastel-mint);">Payment
+        Settlement</div>
+    </div>
+  </section>
+
+  <!-- Benefits Section -->
+  <section id="benefits" class="benefits-section">
+    <div style="text-align: center; margin-bottom: 40px;">
+      <h2 class="section-title">Enterprise Benefits</h2>
+      <p class="section-desc">Designed for modern finance and supply chain teams requiring complete governance and
+        transparency.</p>
+    </div>
+
+    <div class="benefits-grid">
+      <div class="benefit-item">
+        <div class="benefit-check">✓</div>
+        <div>
+          <h4 style="font-weight: 700; margin-bottom: 4px;">Reduced Manual Work</h4>
+          <p style="font-size: 13px; color: var(--text-secondary);">Automates repetitive data extraction, comparison,
+            and cross-checks without manual spreadsheets.</p>
+        </div>
+      </div>
+
+      <div class="benefit-item">
+        <div class="benefit-check">✓</div>
+        <div>
+          <h4 style="font-weight: 700; margin-bottom: 4px;">Faster Procurement Processing</h4>
+          <p style="font-size: 13px; color: var(--text-secondary);">Reduces procurement cycle time from weeks to minutes
+            with automated vendor ranking and notifications.</p>
+        </div>
+      </div>
+
+      <div class="benefit-item">
+        <div class="benefit-check">✓</div>
+        <div>
+          <h4 style="font-weight: 700; margin-bottom: 4px;">Improved Policy Enforcement</h4>
+          <p style="font-size: 13px; color: var(--text-secondary);">Guarantees all corporate spending rules, budget
+            thresholds, and delegation of authority are followed.</p>
+        </div>
+      </div>
+
+      <div class="benefit-item">
+        <div class="benefit-check">✓</div>
+        <div>
+          <h4 style="font-weight: 700; margin-bottom: 4px;">Invoice Discrepancy Detection</h4>
+          <p style="font-size: 13px; color: var(--text-secondary);">Automated 3-way matching flags overbilled unit
+            rates, quantity mismatches, and phantom receipts.</p>
+        </div>
+      </div>
+
+      <div class="benefit-item">
+        <div class="benefit-check">✓</div>
+        <div>
+          <h4 style="font-weight: 700; margin-bottom: 4px;">Transparent Approvals</h4>
+          <p style="font-size: 13px; color: var(--text-secondary);">Role-based authorization queues with full
+            justification notes and decision auditing.</p>
+        </div>
+      </div>
+
+      <div class="benefit-item">
+        <div class="benefit-check">✓</div>
+        <div>
+          <h4 style="font-weight: 700; margin-bottom: 4px;">Complete Audit History</h4>
+          <p style="font-size: 13px; color: var(--text-secondary);">Every decision, price evaluation, and payment has an
+            immutable timestamped log.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <p>&copy; 2026 Agentic Procurement-to-Payment Control Tower. Built with Flask, LangGraph, and SQLite.</p>
+  </footer>
+</body>
+
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Agentic Procurement-to-Payment Control Tower{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🏢</div>
+          <div class="logo-text">
+            <h2>Procure Tower</h2>
+            <span>P2P CONTROL TOWER</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <div class="menu-category">Overview</div>
+        <a href="{{ url_for('dashboard') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+          <span>📊</span> Dashboard
+        </a>
+
+        <div class="menu-category">Autonomous Agents</div>
+        <a href="{{ url_for('agent_requirements') }}" class="nav-link agent-1 {% if active_page == 'agent_requirements' %}active{% endif %}">
+          <span>📝</span> 1. Requirements
+        </a>
+        <a href="{{ url_for('agent_vendors') }}" class="nav-link agent-2 {% if active_page == 'agent_vendors' %}active{% endif %}">
+          <span>⚖️</span> 2. Vendor Comparison
+        </a>
+        <a href="{{ url_for('agent_budget_policy') }}" class="nav-link agent-3 {% if active_page == 'agent_budget_policy' %}active{% endif %}">
+          <span>💰</span> 3. Budget & Policy
+        </a>
+        <a href="{{ url_for('agent_purchase_order') }}" class="nav-link agent-4 {% if active_page == 'agent_purchase_order' %}active{% endif %}">
+          <span>📄</span> 4. Purchase Order
+        </a>
+        <a href="{{ url_for('agent_invoice_matching') }}" class="nav-link agent-5 {% if active_page == 'agent_invoice_matching' %}active{% endif %}">
+          <span>🔍</span> 5. Invoice Matching
+        </a>
+        <a href="{{ url_for('agent_approval_payment') }}" class="nav-link agent-6 {% if active_page == 'agent_approval_payment' %}active{% endif %}">
+          <span>💳</span> 6. Approval & Payment
+        </a>
+
+        <div class="menu-category">Governance</div>
+        <a href="{{ url_for('approvals') }}" class="nav-link {% if active_page == 'approvals' %}active{% endif %}">
+          <span>🛡️</span> Approval Center
+          {% if pending_approvals_count and pending_approvals_count > 0 %}
+            <span class="nav-badge">{{ pending_approvals_count }}</span>
+          {% endif %}
+        </a>
+        <a href="{{ url_for('audit_logs') }}" class="nav-link {% if active_page == 'audit_logs' %}active{% endif %}">
+          <span>📜</span> Audit Trail
+        </a>
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="user-info">
+          <div class="user-avatar">{{ session.get('user_name', 'U')[0] }}</div>
+          <div class="user-meta">
+            <div class="name">{{ session.get('user_name', 'Employee') }}</div>
+            <div class="role">{{ session.get('user_role', 'employee') }} &bull; {{ session.get('department', 'IT') }}</div>
+          </div>
+        </div>
+        <a href="{{ url_for('logout') }}" title="Sign Out" class="btn btn-secondary btn-sm" style="padding: 4px 8px;">
+          🚪
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <!-- Flash Alert Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-alert {{ category }}">
+                <span>{% if category == 'success' %}✅{% elif category == 'error' or category == 'danger' %}⚠️{% else %}ℹ️{% endif %}</span>
+                <div>{{ message }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Agent 6: Controlled Payment Settlement - Control Tower{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="header-title">
+    <h1>Agent 6: Controlled Payment Authorization & Settlement</h1>
+    <p>Verifies 3-way matching certification, enforces segregation of duties, prevents duplicate disbursements via idempotency, and coordinates payment execution.</p>
+  </div>
+  <div class="header-actions">
+    {% if payment and payment.status == 'completed' %}
+      <span class="badge badge-success" style="font-size: 13px; padding: 6px 12px;">✅ Transaction Settled</span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Workflow Progress Indicator -->
+<div class="workflow-tracker">
+  <div class="step-node completed">✓ 1. Requirements</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 2. Vendor Comparison</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 3. Budget & Policy</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 4. PO Issuance</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 5. Invoice Matching</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node active">6. Payment Settlement (Active)</div>
+</div>
+
+{% if invoice %}
+  <!-- Payment Pre-Condition Verification Matrix -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header pastel-bluegreen">
+      <h3><span>🛡️</span> Mandatory Payment Authorization Pre-Flight Audit</h3>
+      <span class="badge badge-lavender">Strict Governance</span>
+    </div>
+    <div class="card-body">
+      <div class="grid-3" style="gap: 16px;">
+        <div style="background: var(--bg-ivory); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">1. Purchase Approval</div>
+          <div style="font-size: 15px; font-weight: 700; color: #34745A; margin: 4px 0;">
+            {% if purchase_approval %}
+              ✅ Authorized by Manager
+            {% else %}
+              ❌ Missing Approval
+            {% endif %}
+          </div>
+          <div style="font-size: 12px; color: var(--text-secondary);">
+            {{ purchase_approval.approver_name|default('Anita Sharma (Manager)') }}
+          </div>
+        </div>
+
+        <div style="background: var(--bg-ivory); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">2. 3-Way Match Status</div>
+          <div style="font-size: 15px; font-weight: 700; margin: 4px 0; {% if invoice.match_status == 'matched' %}color: #34745A;{% else %}color: #A74757;{% endif %}">
+            {% if invoice.match_status == 'matched' %}
+              ✅ Verified (0% Variance)
+            {% else %}
+              ❌ Blocked (Discrepancy)
+            {% endif %}
+          </div>
+          <div style="font-size: 12px; color: var(--text-secondary);">
+            Inv: {{ invoice.invoice_number }} &bull; PO: {{ po.id }}
+          </div>
+        </div>
+
+        <div style="background: var(--bg-ivory); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">3. Warehouse Receipt</div>
+          <div style="font-size: 15px; font-weight: 700; color: #34745A; margin: 4px 0;">
+            {% if grn and grn.inspection_status == 'accepted' %}
+              ✅ Goods Received ({{ grn.quantity_received }}x)
+            {% else %}
+              ❌ Pending Acceptance
+            {% endif %}
+          </div>
+          <div style="font-size: 12px; color: var(--text-secondary);">
+            Inspection: {{ grn.inspection_status|default('Accepted') }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settled Payment Card with Downloadable Paid Receipt -->
+  {% if payment and payment.status == 'completed' %}
+    <div class="card" style="border: 2px solid #34745A; background: #FFFFFF; margin-bottom: 24px;">
+      <div class="card-header pastel-mint" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #1E4F3B;">Payment Disbursed &amp; Certified</span>
+          <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">
+            Transaction Settled Successfully
+          </h2>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <a href="{{ url_for('view_payment_receipt', payment_id=payment.id) }}" target="_blank" class="btn btn-primary" style="padding: 8px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+            📄 View Full Paid Receipt
+          </a>
+          <a href="{{ url_for('view_payment_receipt', payment_id=payment.id) }}?download=1" target="_blank" class="btn btn-success" style="padding: 8px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+            📥 Download Receipt (PDF)
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid-2" style="margin-bottom: 20px;">
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Payment &amp; Transaction Reference</div>
+            <div style="font-size: 15px; font-weight: 800; color: #28344A; font-family: monospace; margin: 4px 0; background: var(--bg-ivory); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+              {{ payment.transaction_reference }}
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
+              Method: <strong>{{ payment.payment_method|default('Online') }}</strong> &bull; Receipt ID: <code>{{ payment.id }}</code>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-ivory); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Total Disbursed Amount</div>
+            <div style="font-size: 26px; font-weight: 800; color: #34745A; margin: 4px 0;">
+              {{ payment.formatted_amount }}
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary);">
+              Beneficiary: <strong>{{ invoice.vendor_name }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Embedded Printable Receipt Snapshot -->
+        <div style="background: #FAFCF9; border: 1px solid #D0E4D8; border-radius: 6px; padding: 18px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #CBD5E1; padding-bottom: 10px; margin-bottom: 12px;">
+            <div>
+              <strong style="color: #1E4F3B; font-size: 14px;">🧾 Payment Advice &amp; Settlement Receipt</strong>
+              <div style="font-size: 11.5px; color: var(--text-muted);">Procure Tower Enterprise Corp &bull; Date: {{ payment.processed_at }}</div>
+            </div>
+            <span class="badge badge-success">Verified &amp; Paid</span>
+          </div>
+
+          <table class="table" style="margin-bottom: 10px;">
+            <tr>
+              <td style="width: 25%;"><strong>Payee Vendor:</strong></td>
+              <td style="width: 25%;">{{ invoice.vendor_name }}</td>
+              <td style="width: 25%;"><strong>Purchase Order:</strong></td>
+              <td style="width: 25%;">{{ po.id }}</td>
+            </tr>
+            <tr>
+              <td><strong>Invoice Number:</strong></td>
+              <td>{{ invoice.invoice_number }}</td>
+              <td><strong>Requisition:</strong></td>
+              <td>{{ current_pr.id }} ({{ current_pr.department }})</td>
+            </tr>
+            <tr>
+              <td><strong>Item Procured:</strong></td>
+              <td>{{ invoice.item_name }} ({{ invoice.quantity }}x)</td>
+              <td><strong>Disbursement Method:</strong></td>
+              <td>{{ payment.payment_method|default('Online') }}</td>
+            </tr>
+            <tr>
+              <td><strong>Amount Disbursed:</strong></td>
+              <td colspan="3"><strong style="color: #34745A; font-size: 16px;">{{ payment.formatted_amount }}</strong> (Zero unauthorized variance)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background: #F0FAF4; border-left: 4px solid #34745A; padding: 14px; border-radius: var(--radius-sm); font-size: 13px; color: #1E4F3B; margin-bottom: 20px;">
+          ✔ End-to-end procurement cycle successfully completed. All six agents have executed their mandates and every event is recorded in the immutable audit trail.
+        </div>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <a href="{{ url_for('view_payment_receipt', payment_id=payment.id) }}" target="_blank" class="btn btn-secondary">
+            🖨️ Open Printable Receipt
+          </a>
+          <a href="{{ url_for('audit_logs', request_id=current_pr.id) }}" class="btn btn-secondary">
+            📜 View Full Lifecycle Audit Trail
+          </a>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+            🏠 Return to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+
+  {% elif invoice.match_status == 'matched' %}
+    <!-- Ready for Payment Execution: Choose Online or Cash -->
+    <div class="card" style="border: 2px solid var(--btn-primary);">
+      <div class="card-header pastel-bluegreen">
+        <h3><span>💳</span> Execute Payment Settlement</h3>
+        <span class="badge badge-success">3-Way Match Certified</span>
+      </div>
+      <div class="card-body">
+        <div class="grid-2" style="margin-bottom: 24px; gap: 24px;">
+          <div>
+            <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">Beneficiary &amp; Invoice Summary</h4>
+            <table class="table">
+              <tr><td><strong>Payee (Vendor):</strong></td><td>{{ invoice.vendor_name }}</td></tr>
+              <tr><td><strong>Invoice Ref:</strong></td><td>{{ invoice.invoice_number }}</td></tr>
+              <tr><td><strong>Related PO:</strong></td><td>{{ po.id }}</td></tr>
+              <tr><td><strong>Item &amp; Qty:</strong></td><td>{{ invoice.item_name }} ({{ invoice.quantity }} units)</td></tr>
+              <tr><td><strong>Settlement Amount:</strong></td><td><strong style="font-size: 18px; color: #34745A;">{{ invoice.formatted_total }}</strong></td></tr>
+            </table>
+          </div>
+
+          <div style="background: var(--bg-ivory); padding: 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 10px;">Select Payment Method</h4>
+            <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+              Choose how to settle this verified procurement invoice. An official paid receipt will be generated upon completion.
+            </p>
+
+            <form action="{{ url_for('agent_approval_payment') }}" method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+              <input type="hidden" name="po_id" value="{{ po.id }}">
+              <input type="hidden" name="pr_id" value="{{ current_pr.id }}">
+
+              <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                <!-- Online Payment Option -->
+                <label style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 6px; cursor: pointer; transition: all 0.2s;" class="payment-method-label">
+                  <input type="radio" name="payment_method" value="Online" checked style="margin-top: 4px;">
+                  <div>
+                    <strong style="color: #28344A; font-size: 14px;">🌐 Online Payment</strong>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                      Corporate NetBanking / RTGS / NEFT / UPI instant settlement
+                    </div>
+                  </div>
+                </label>
+
+                <!-- Cash Payment Option -->
+                <label style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 6px; cursor: pointer; transition: all 0.2s;" class="payment-method-label">
+                  <input type="radio" name="payment_method" value="Cash" style="margin-top: 4px;">
+                  <div>
+                    <strong style="color: #28344A; font-size: 14px;">💵 Cash Disbursement</strong>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                      Corporate Petty Cash / Treasury Cash Desk Voucher
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <button type="submit" class="btn btn-success btn-lg" style="width: 100%; padding: 14px; font-size: 15px; font-weight: 700;">
+                💸 Pay Now &amp; Generate Paid Receipt
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <!-- Blocked Due to Invoice Discrepancy -->
+    <div class="card" style="border-left: 4px solid var(--status-danger-text);">
+      <div class="card-header pastel-blush">
+        <h3><span>⛔</span> Payment Authorization Blocked</h3>
+        <span class="badge badge-danger">Discrepancy Exception</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size: 13.5px; color: var(--status-danger-text); margin-bottom: 16px;">
+          The supplier invoice has unresolved price or quantity discrepancies with the purchase order or warehouse goods receipt.
+        </p>
+        <a href="{{ url_for('agent_invoice_matching', pr_id=current_pr.id) }}" class="btn btn-secondary">
+          &larr; Return to Agent 5: Resolve Invoice Matching
+        </a>
+      </div>
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">💳</div>
+    <h3>No Invoices Ready for Payment</h3>
+    <p>Please complete 3-way invoice matching in Agent 5 to release payment settlements.</p>
+    <a href="{{ url_for('agent_invoice_matching') }}" class="btn btn-primary">Go to Agent 5: Invoice Matching</a>
+  </div>
+{% endif %}
+
+{% endblock %}

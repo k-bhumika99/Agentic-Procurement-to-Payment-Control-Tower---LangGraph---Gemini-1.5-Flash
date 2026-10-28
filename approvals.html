@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Approval Center - Governance & Authorizations{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="header-title">
+    <h1>Approval Governance Center</h1>
+    <p>Dedicated review portal for authorized managers and executives to evaluate and sign off on purchase commitments and disbursements.</p>
+  </div>
+  <div class="header-actions">
+    <div style="font-size: 13px; color: var(--text-secondary);">
+      Logged in as: <strong>{{ session.get('user_name') }}</strong> (Role: <span class="badge badge-lavender">{{ session.get('user_role') }}</span>)
+    </div>
+  </div>
+</div>
+
+<!-- Pending Purchase Approvals -->
+<div class="card">
+  <div class="card-header pastel-peach">
+    <h3><span>📋</span> Pending Purchase Commitments Requiring Authorization</h3>
+    <span class="badge badge-warning">{{ pending_prs|length }} Awaiting Decision</span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    {% if pending_prs %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Request ID & Dept</th>
+              <th>Item & Quantity</th>
+              <th>Selected Supplier</th>
+              <th>Total Commitment</th>
+              <th>Policy & Budget Check</th>
+              <th>Sign-Off Decision &amp; Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pr in pending_prs %}
+              <tr {% if target_pr_id and pr.id == target_pr_id %}style="background: #FFFBF0; border-left: 4px solid #D9822B;"{% endif %}>
+                <td>
+                  {% if target_pr_id and pr.id == target_pr_id %}
+                    <span class="badge badge-warning" style="font-size: 10px; margin-bottom: 4px; display: inline-block;">Current Request</span><br>
+                  {% endif %}
+                  <strong>{{ pr.id }}</strong><br>
+                  <small style="color: var(--text-muted);">Dept: {{ pr.department }}</small>
+                </td>
+                <td>
+                  <strong>{{ pr.item_name }}</strong><br>
+                  <small>{{ pr.quantity }} units ({{ pr.min_ram_gb }}GB RAM / {{ pr.min_storage_gb }}GB SSD)</small>
+                </td>
+                <td>
+                  <strong>{{ pr.vendor_name|default('TechNova Solutions') }}</strong><br>
+                  <small style="color: var(--text-secondary);">SLA: {{ pr.delivery_days|default(7) }} Days</small>
+                </td>
+                <td>
+                  <strong style="font-size: 14px; color: #28344A;">{{ pr.formatted_total|default(pr.formatted_budget) }}</strong>
+                </td>
+                <td>
+                  <span class="badge badge-success">Budget Verified</span><br>
+                  <small style="color: var(--text-muted); font-size: 11px;">Awaiting Sign-Off</small>
+                </td>
+                <td style="min-width: 280px;">
+                  <form action="{{ url_for('approvals') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="pr_id" value="{{ pr.id }}">
+                    <input type="hidden" name="return_url" value="{{ url_for('agent_budget_policy', pr_id=pr.id) }}">
+                    <input type="hidden" name="approval_type" value="purchase">
+
+                    <div style="margin-bottom: 6px;">
+                      <input type="text" name="comment" class="form-control" style="font-size: 12px; padding: 6px 8px;" placeholder="Decision justification rationale..." required value="Approved as per departmental procurement policy.">
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      <button type="submit" name="decision" value="approved" class="btn btn-success btn-sm" style="flex: 1; font-weight: 600;">
+                        ✔ Approve &amp; Continue &rarr;
+                      </button>
+                      <button type="submit" name="decision" value="rejected" class="btn btn-danger btn-sm"
+                              onclick="this.form.comment.value = this.form.comment.value || 'Rejected due to policy evaluation.';">
+                        ✖ Reject
+                      </button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state" style="border: none; padding: 30px;">
+        <div class="empty-icon">✅</div>
+        <h3>No Pending Purchase Approvals</h3>
+        <p>All submitted purchase requisitions have been evaluated and resolved.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Past Approval History -->
+<div class="card" style="margin-top: 24px;">
+  <div class="card-header pastel-lavender">
+    <h3><span>📜</span> Recent Authorization Audit History</h3>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>PR ID</th>
+            <th>Approver Name</th>
+            <th>Decision</th>
+            <th>Comments / Justification</th>
+            <th>Timestamp</th>
+            <th style="width:48px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in past_approvals %}
+            <tr>
+              <td><strong>{{ app.pr_id }}</strong></td>
+              <td>{{ app.approver_name }} ({{ app.approver_role }})</td>
+              <td>
+                {% if app.decision == 'approved' %}
+                  <span class="badge badge-success">Approved</span>
+                {% else %}
+                  <span class="badge badge-danger">Rejected</span>
+                {% endif %}
+              </td>
+              <td>{{ app.comment }}</td>
+              <td style="color: var(--text-muted); font-size: 12px;">{{ app.decided_at }}</td>
+              <td style="text-align:center; padding: 8px 4px;">
+                <form action="{{ url_for('delete_audit_record', audit_id=app.id) }}" method="POST"
+                      onsubmit="return confirm('Delete this audit record? This cannot be undone.')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" title="Delete" style="background:none; border:none; cursor:pointer; color:#C0392B; font-size:15px; padding:2px 6px; border-radius:4px; transition:background 0.15s;" onmouseover="this.style.background='#FDE8EC'" onmouseout="this.style.background='none'">🗑</button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                No prior approval decisions recorded.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

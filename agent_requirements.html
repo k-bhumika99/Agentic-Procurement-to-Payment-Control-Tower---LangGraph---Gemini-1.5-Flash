@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Agent 1: Requirement Analysis - Control Tower{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="header-title">
+    <h1>Agent 1: Requirement Analysis &amp; Ingestion</h1>
+    <p>Enter the requisition details below to initialize the automated procurement workflow.</p>
+  </div>
+  <div class="header-actions">
+    <span class="badge badge-info">Agent 1 Active</span>
+  </div>
+</div>
+
+<!-- Workflow Progress Indicator -->
+<div class="workflow-tracker">
+  <div class="step-node active">1. Requirements (Active)</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">2. Vendor Comparison</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">3. Budget &amp; Policy</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">4. PO Issuance</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">5. Invoice Matching</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">6. Payment Settlement</div>
+</div>
+
+<!-- Full Width Input Form Card -->
+<div class="card" style="width: 100%; margin-bottom: 30px;">
+  <div class="card-header pastel-peach">
+    <h3><span>📝</span> Submit Purchase Request</h3>
+    <span class="badge badge-primary">Input Form</span>
+  </div>
+  <div class="card-body" style="padding: 28px;">
+    <!-- Fast-fill preset buttons -->
+    <div style="margin-bottom: 24px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+        ⚡ Quick Presets (Click to autofill):
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadPreset('smartwatch')" style="font-size: 12.5px; padding: 6px 14px;">
+          ⌚ Smart Watches (100 units)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadPreset('laptop')" style="font-size: 12.5px; padding: 6px 14px;">
+          💻 Laptops (500 units)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadPreset('chair')" style="font-size: 12.5px; padding: 6px 14px;">
+          🪑 Office Chairs (50 units)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadPreset('monitor')" style="font-size: 12.5px; padding: 6px 14px;">
+          🖥️ Monitors (100 units)
+        </button>
+      </div>
+    </div>
+
+    <form action="{{ url_for('agent_requirements') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="form-row" style="margin-bottom: 20px;">
+        <div class="form-group" style="flex: 2;">
+          <label class="form-label" for="title">Purchase Request Title</label>
+          <input type="text" id="title" name="title" class="form-control" placeholder="e.g. Q4 Smart Watch Distribution" required value="">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label class="form-label" for="department">Requesting Department</label>
+          <select id="department" name="department" class="form-select" required>
+            <option value="IT" selected>IT Department</option>
+            <option value="Operations">Operations</option>
+            <option value="Finance">Finance</option>
+            <option value="Human Resources">Human Resources</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-bottom: 20px;">
+        <div class="form-group" style="flex: 1.5;">
+          <label class="form-label" for="item_name">Item / Asset Category</label>
+          <input type="text" id="item_name" name="item_name" class="form-control" placeholder="e.g. Smart Watches, Laptops, Office Chairs" required value="">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label class="form-label" for="quantity">Quantity Required</label>
+          <input type="number" id="quantity" name="quantity" class="form-control" min="1" required value="" placeholder="e.g. 100">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label class="form-label" for="delivery_deadline_days">Max Delivery SLA (Days)</label>
+          <input type="number" id="delivery_deadline_days" name="delivery_deadline_days" class="form-control" min="1" required value="" placeholder="e.g. 7">
+        </div>
+      </div>
+
+      <!-- Budget Row: Maximum PR Budget & Available Department Budget -->
+      <div class="form-row" style="margin-bottom: 20px;">
+        <div class="form-group" style="flex: 1;">
+          <label class="form-label" for="max_budget_rupees">Maximum Budget for PR (₹)</label>
+          <input type="number" id="max_budget_rupees" name="max_budget_rupees" class="form-control" min="1" step="100" required value="" placeholder="e.g. 500000">
+          <div id="budget_preview" class="form-help" style="color: var(--btn-primary); font-weight: 600; min-height: 18px;"></div>
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label class="form-label" for="available_dept_budget">Available Department Budget (₹)</label>
+          <input type="number" id="available_dept_budget" name="available_dept_budget" class="form-control" min="1" step="100" required value="1500000" placeholder="e.g. 1500000">
+          <div id="dept_budget_preview" class="form-help" style="color: #34745A; font-weight: 600; min-height: 18px;">₹15,00,000 (₹15.00 L)</div>
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;">
+            💡 Allocated department budget for verification in Agent 3 (Budget &amp; Policy).
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Computing Hardware Specifications -->
+      <div class="form-row" style="margin-bottom: 20px;">
+        <div class="form-group" id="ram_field" style="display:none; flex: 1;">
+          <label class="form-label" for="min_ram_gb">Minimum RAM (GB)</label>
+          <input type="number" id="min_ram_gb" name="min_ram_gb" class="form-control" min="0" value="0">
+        </div>
+        <div class="form-group" id="ssd_field" style="display:none; flex: 1;">
+          <label class="form-label" for="min_storage_gb">Minimum SSD Storage (GB)</label>
+          <input type="number" id="min_storage_gb" name="min_storage_gb" class="form-control" min="0" value="0">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 28px;">
+        <label class="form-label" for="specs">Additional Requirements / Notes</label>
+        <textarea id="specs" name="specs" class="form-control" rows="3" placeholder="Any specific requirements, brand preferences, or constraints"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px; font-weight: 700;">
+        🚀 Analyze &amp; Submit to Workflow
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const COMPUTING_KEYWORDS = ["laptop", "notebook", "computer", "pc", "monitor", "display", "screen", "thinkbook", "macbook"];
+
+  function isComputing(itemName) {
+    const low = itemName.toLowerCase();
+    return COMPUTING_KEYWORDS.some(k => low.includes(k));
+  }
+
+  function toggleComputingFields(itemName) {
+    const show = isComputing(itemName);
+    document.getElementById('ram_field').style.display = show ? '' : 'none';
+    document.getElementById('ssd_field').style.display = show ? '' : 'none';
+    if (!show) {
+      document.getElementById('min_ram_gb').value = 0;
+      document.getElementById('min_storage_gb').value = 0;
+    }
+  }
+
+  document.getElementById('item_name').addEventListener('input', function() {
+    toggleComputingFields(this.value);
+  });
+
+  function loadPreset(type) {
+    const presets = {
+      'smartwatch': {
+        title: 'Smart Watch Distribution',
+        item_name: 'Smart Watches',
+        quantity: 100,
+        budget: 1000000,
+        dept_budget: 1500000,
+        sla: 7,
+        ram: 0, ssd: 0
+      },
+      'laptop': {
+        title: 'Enterprise Laptop Refresh',
+        item_name: 'Enterprise Laptops',
+        quantity: 500,
+        budget: 25000000,
+        dept_budget: 50000000,
+        sla: 10,
+        ram: 16, ssd: 512
+      },
+      'chair': {
+        title: 'Office Chair Procurement',
+        item_name: 'Office Chairs',
+        quantity: 50,
+        budget: 450000,
+        dept_budget: 1200000,
+        sla: 5,
+        ram: 0, ssd: 0
+      },
+      'monitor': {
+        title: 'Display Monitor Procurement',
+        item_name: 'Office Monitors',
+        quantity: 100,
+        budget: 3000000,
+        dept_budget: 6000000,
+        sla: 10,
+        ram: 0, ssd: 0
+      }
+    };
+    const p = presets[type];
+    if (!p) return;
+    document.getElementById('title').value = p.title;
+    document.getElementById('item_name').value = p.item_name;
+    document.getElementById('quantity').value = p.quantity;
+    document.getElementById('max_budget_rupees').value = p.budget;
+    document.getElementById('available_dept_budget').value = p.dept_budget;
+    document.getElementById('delivery_deadline_days').value = p.sla;
+    document.getElementById('min_ram_gb').value = p.ram;
+    document.getElementById('min_storage_gb').value = p.ssd;
+    toggleComputingFields(p.item_name);
+    updateBudgetPreview(p.budget);
+    updateDeptBudgetPreview(p.dept_budget);
+  }
+
+  function updateBudgetPreview(val) {
+    const num = parseFloat(val) || 0;
+    let preview = '₹' + num.toLocaleString('en-IN');
+    if (num >= 10000000) preview += ` (₹${(num/10000000).toFixed(2)} Cr)`;
+    else if (num >= 100000) preview += ` (₹${(num/100000).toFixed(2)} L)`;
+    document.getElementById('budget_preview').innerText = preview;
+  }
+
+  function updateDeptBudgetPreview(val) {
+    const num = parseFloat(val) || 0;
+    let preview = '₹' + num.toLocaleString('en-IN');
+    if (num >= 10000000) preview += ` (₹${(num/10000000).toFixed(2)} Cr)`;
+    else if (num >= 100000) preview += ` (₹${(num/100000).toFixed(2)} L)`;
+    document.getElementById('dept_budget_preview').innerText = preview;
+  }
+
+  document.getElementById('max_budget_rupees').addEventListener('input', function() {
+    updateBudgetPreview(this.value);
+  });
+
+  document.getElementById('available_dept_budget').addEventListener('input', function() {
+    updateDeptBudgetPreview(this.value);
+  });
+</script>
+{% endblock %}

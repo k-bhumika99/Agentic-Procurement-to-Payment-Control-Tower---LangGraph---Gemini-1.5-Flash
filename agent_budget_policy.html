@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Agent 3: Budget & Policy Validation - Control Tower{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="header-title">
+    <h1>Agent 3: Budget & Policy Validation</h1>
+    <p>Verifies departmental fiscal availability, enforces corporate spending thresholds, and establishes required authorization governance.</p>
+  </div>
+  <div class="header-actions">
+    {% if current_pr %}
+      <form action="{{ url_for('agent_budget_policy') }}" method="POST" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="pr_id" value="{{ current_pr.id }}">
+        <button type="submit" class="btn btn-primary">
+          <span>⚡</span> Re-Evaluate Budget & Policy
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Workflow Progress Indicator -->
+<div class="workflow-tracker">
+  <div class="step-node completed">✓ 1. Requirements</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 2. Vendor Comparison</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node active">3. Budget & Policy (Active)</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">4. PO Issuance</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">5. Invoice Matching</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">6. Payment</div>
+</div>
+
+{% if current_pr and selected_vendor %}
+  <!-- Active PR & Vendor Summary Bar -->
+  <div class="card" style="margin-bottom: 20px; background: var(--pastel-mint); border-color: #C2E3CD;">
+    <div class="card-body" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <span style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700;">Purchase Request Under Evaluation</span>
+        <h3 style="font-size: 17px; font-weight: 700; color: var(--text-primary);">
+          {{ current_pr.id }} &bull; {{ current_pr.department }} Department
+        </h3>
+      </div>
+      <div style="display: flex; gap: 20px; font-size: 13px;">
+        <div><strong>Vendor:</strong> {{ selected_vendor.name }}</div>
+        <div><strong>Item:</strong> {{ current_pr.item_name }} ({{ current_pr.quantity }}x)</div>
+        <div><strong>Unit Rate:</strong> {{ selected_vendor.formatted_unit_price }}</div>
+      </div>
+      <div>
+        <span class="badge badge-info">{{ current_pr.status.replace('_', ' ').title() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget & Financial Availability Cards -->
+  <div class="grid-3" style="margin-bottom: 24px;">
+    <div class="card" style="border-top: 4px solid var(--btn-primary); margin-bottom: 0;">
+      <div class="card-body">
+        <span class="kpi-label">Required Total Commitment</span>
+        <div style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 6px 0;">
+          {{ validation.formatted_total_cost }}
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);">
+          {{ current_pr.quantity }} units &times; {{ selected_vendor.formatted_unit_price }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-top: 4px solid #34745A; margin-bottom: 0;">
+      <div class="card-body">
+        <span class="kpi-label">Available Department Budget</span>
+        <div style="font-size: 24px; font-weight: 800; color: #34745A; margin: 6px 0;">
+          {{ validation.formatted_available_budget }}
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);">
+          Total: {{ validation.formatted_total_budget }} ({{ dept_budget.fiscal_year|default('FY26') }})
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-top: 4px solid #6C5CE7; margin-bottom: 0;">
+      <div class="card-body">
+        <span class="kpi-label">Remaining Balance Post-Purchase</span>
+        <div style="font-size: 24px; font-weight: 800; color: #28344A; margin: 6px 0;">
+          {{ validation.formatted_remaining_budget }}
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);">
+          Budget Utilization: {{ validation.utilization_pct }}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Validation Status & Governance Policy Section -->
+  <div class="grid-2">
+    <!-- Policy & Compliance Rules Card -->
+    <div class="card">
+      <div class="card-header pastel-mint">
+        <h3><span>📜</span> Corporate Policy Evaluation Checks</h3>
+        {% if validation.budget_ok and validation.policy_ok %}
+          <span class="badge badge-success">Policies Compliant</span>
+        {% else %}
+          <span class="badge badge-danger">Policy Violation</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+            <div>
+              <strong>Departmental Budget Availability</strong>
+              <div style="font-size: 12px; color: var(--text-secondary);">Compares total commitment against unallocated funds.</div>
+            </div>
+            <div>
+              {% if validation.budget_ok %}
+                <span class="badge badge-success">Passed</span>
+              {% else %}
+                <span class="badge badge-danger">Insufficient Funds</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+            <div>
+              <strong>Executive Approval Threshold</strong>
+              <div style="font-size: 12px; color: var(--text-secondary);">Threshold: > ₹50,000 (Manager), > ₹50 Lakhs (Executive VP).</div>
+            </div>
+            <div>
+              <span class="badge badge-lavender">{{ validation.approval_requirement }}</span>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+            <div>
+              <strong>Market Competition & Sourcing Rule</strong>
+              <div style="font-size: 12px; color: var(--text-secondary);">Minimum 3 market vendors compared before commitment.</div>
+            </div>
+            <div>
+              <span class="badge badge-success">Passed (5 Vendors)</span>
+            </div>
+          </div>
+        </div>
+
+        {% if validation.exceptions %}
+          <div style="background: var(--status-danger-bg); border-left: 4px solid var(--status-danger-text); padding: 12px; border-radius: 4px; font-size: 13px; color: var(--status-danger-text);">
+            <strong>Exceptions Detected:</strong>
+            <ul style="margin: 4px 0 0 16px;">
+              {% for ex in validation.exceptions %}
+                <li>{{ ex }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% else %}
+          <div style="background: #F2FAF5; border-left: 4px solid #34745A; padding: 12px; border-radius: 4px; font-size: 13px; color: #1E4F3B;">
+            ✔ All fiscal quotas and procurement thresholds validated successfully.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Governance Routing Action Card -->
+    <div class="card">
+      <div class="card-header pastel-peach">
+        <h3><span>🛡️</span> Required Governance Routing</h3>
+        <span class="badge badge-warning">Approval Gate</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 16px;">
+          <strong>Enterprise Sign-Off:</strong> Passing budget validation verifies funds availability. Formal sign-off authorization is required to commit corporate funds and generate the Purchase Order.
+        </p>
+
+        <div style="background: var(--bg-ivory); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 20px;">
+          <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Current Governance State</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 4px 0;">
+            {% if current_pr.status == 'purchase_approved' %}
+              ✅ Authorized &amp; Approved
+            {% elif current_pr.status == 'purchase_rejected' %}
+              ❌ Rejected
+            {% elif current_pr.status == 'pending_purchase_approval' %}
+              ⏳ Pending Sign-Off Authorization
+            {% else %}
+              Awaiting Submission to Approval Queue
+            {% endif %}
+          </div>
+          {% if approval_record %}
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
+              Decided by: <strong>{{ approval_record.approver_name }}</strong> on {{ approval_record.decided_at }}<br>
+              Notes: "{{ approval_record.comment }}"
+            </div>
+          {% endif %}
+        </div>
+
+        {% if current_pr.status == 'purchase_approved' %}
+          <div style="background: #E8F7EE; border-left: 4px solid #34745A; padding: 14px 18px; border-radius: 6px; margin-bottom: 16px;">
+            <div style="font-weight: 700; color: #1E4F3B; font-size: 14px; margin-bottom: 4px;">
+              ✅ Sign-Off Completed &amp; Authorized
+            </div>
+            {% if approval_record %}
+              <div style="font-size: 12.5px; color: #2E5A44;">
+                Approved by <strong>{{ approval_record.approver_name }}</strong> on {{ approval_record.decided_at[:10] if approval_record.decided_at else '' }}<br>
+                {% if approval_record.comment %}<em>"{{ approval_record.comment }}"</em>{% endif %}
+              </div>
+            {% endif %}
+          </div>
+          <a href="{{ url_for('agent_purchase_order', pr_id=current_pr.id) }}" class="btn btn-primary" style="width: 100%; font-size: 14px; font-weight: 600; padding: 12px; text-align: center; display: block;">
+            Proceed to Agent 4: Generate Purchase Order &rarr;
+          </a>
+
+        {% elif current_pr.status == 'purchase_rejected' %}
+          <div style="background: #FDE8EC; border-left: 4px solid #D96B7E; padding: 14px 18px; border-radius: 6px; margin-bottom: 16px;">
+            <div style="font-weight: 700; color: #7B2035; font-size: 14px; margin-bottom: 4px;">
+              ❌ Purchase Request Rejected
+            </div>
+            {% if approval_record and approval_record.comment %}
+              <div style="font-size: 13px; color: #5C1626; font-style: italic;">"{{ approval_record.comment }}"</div>
+            {% endif %}
+            {% if approval_record and approval_record.decided_at %}
+              <div style="font-size: 11px; color: #9B3447; margin-top: 4px;">Decided on {{ approval_record.decided_at[:10] }}</div>
+            {% endif %}
+          </div>
+          <a href="{{ url_for('agent_requirements') }}" class="btn btn-primary" style="width: 100%; text-align: center; display: block;">
+            + Submit a New Purchase Request
+          </a>
+
+        {% else %}
+          <!-- Pending Sign-Off: Redirect to Approval Center to Authorize -->
+          <div style="background: #FFF8E8; border: 1px solid #F0D080; border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px;">
+            <div style="font-size: 13.5px; font-weight: 600; color: #855B00; margin-bottom: 6px;">
+              ⏳ Authorization Required
+            </div>
+            <p style="font-size: 12.5px; color: #6E4E00; margin-bottom: 14px; line-height: 1.45;">
+              Passing budget validation confirms available funds. A formal sign-off in the Approval Center is required to commit funds and proceed to Purchase Order generation.
+            </p>
+            <a href="{{ url_for('approvals', pr_id=current_pr.id) }}" class="btn btn-primary" style="width: 100%; font-size: 14px; font-weight: 600; padding: 12px; text-align: center; display: block;">
+              Proceed to Approval Center to Authorize &rarr;
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+{% else %}
+  <!-- Empty State -->
+  <div class="empty-state">
+    <div class="empty-icon">💰</div>
+    <h3>No Supplier Selected</h3>
+    <p>Please select and compare vendors in Agent 2 so Agent 3 can validate the budget against real supplier pricing.</p>
+    <a href="{{ url_for('agent_vendors') }}" class="btn btn-primary">Go to Agent 2: Vendors</a>
+  </div>
+{% endif %}
+
+{% endblock %}

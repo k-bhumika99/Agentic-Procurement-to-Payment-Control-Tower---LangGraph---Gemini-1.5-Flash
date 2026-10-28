@@ -1,0 +1,605 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Analytics - Procurement Control Tower{% endblock %}
+
+{% block content %}
+<!-- Executive Greeting Card -->
+<div class="card" style="background: linear-gradient(135deg, #FFFFFF 0%, #F5F8FE 60%, #EBF1FB 100%); border: 1px solid #D5E1F2; box-shadow: var(--shadow-sm); margin-bottom: 24px; padding: 22px 28px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div style="width: 52px; height: 52px; border-radius: 14px; background: #DCE8F8; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: inset 0 0 0 1px #BED3F2;">
+        👋
+      </div>
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h2 id="dynamicGreeting" style="font-size: 21px; font-weight: 800; color: #28344A; letter-spacing: -0.3px;">
+            Welcome, {{ session.get('user_name', 'Executive') }}!
+          </h2>
+          <span class="badge badge-lavender" style="text-transform: capitalize; padding: 3px 10px;">
+            {{ session.get('user_role', 'Manager') }} &bull; {{ session.get('department', 'IT') }}
+          </span>
+        </div>
+        <p style="color: #687386; font-size: 13.5px; margin-top: 4px;">
+          Here is your autonomous procurement telemetry overview. <strong>{{ stats.pending_purchase_approvals }}</strong> requisitions are waiting in the approval queue.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5 KPI Summary Cards Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+  <!-- Card 1: Total Requisitions -->
+  <div class="kpi-card" style="border-top: 4px solid #718CC4; background: #FFFFFF;">
+    <div class="kpi-top">
+      <span class="kpi-label" style="color: #4A6E9E;">Total Requisitions</span>
+      <div class="kpi-icon" style="background: #E3EFFD; color: #2A5694; font-size: 17px;">📑</div>
+    </div>
+    <div class="kpi-val" style="color: #28344A;">{{ stats.total_pr }}</div>
+    <div class="kpi-sub" style="display: flex; align-items: center; gap: 4px; color: #687386;">
+      <span>🏢</span> Across all business units
+    </div>
+  </div>
+
+  <!-- Card 2: Pending Approvals -->
+  <div class="kpi-card" style="border-top: 4px solid #E4A964; background: #FFFFFF;">
+    <div class="kpi-top">
+      <span class="kpi-label" style="color: #9E652E;">Pending Approval</span>
+      <div class="kpi-icon" style="background: #FDEED9; color: #8F5927; font-size: 17px;">⏳</div>
+    </div>
+    <div class="kpi-val" style="color: #9E652E;">{{ stats.pending_purchase_approvals }}</div>
+    <div class="kpi-sub" style="display: flex; align-items: center; gap: 4px; color: #8F5927;">
+      <span>🛡️</span> Awaiting manager sign-off
+    </div>
+  </div>
+
+  <!-- Card 3: Active Purchase Orders -->
+  <div class="kpi-card" style="border-top: 4px solid #9F8AC8; background: #FFFFFF;">
+    <div class="kpi-top">
+      <span class="kpi-label" style="color: #614894;">Active POs</span>
+      <div class="kpi-icon" style="background: #EDE7F9; color: #5B418E; font-size: 17px;">📦</div>
+    </div>
+    <div class="kpi-val" style="color: #5B418E;">{{ stats.total_po }}</div>
+    <div class="kpi-sub" style="display: flex; align-items: center; gap: 4px; color: #687386;">
+      <span>📄</span> Dispatched to vendors
+    </div>
+  </div>
+
+  <!-- Card 4: Invoice Mismatches & Exceptions -->
+  <div class="kpi-card" style="border-top: 4px solid #D96B7E; background: #FFFFFF;">
+    <div class="kpi-top">
+      <span class="kpi-label" style="color: #9B3447;">Invoice Exceptions</span>
+      <div class="kpi-icon" style="background: #FDE8EC; color: #9B3447; font-size: 17px;">⚠️</div>
+    </div>
+    <div class="kpi-val" style="color: #A74757;">{{ stats.invoice_exceptions }}</div>
+    <div class="kpi-sub" style="display: flex; align-items: center; gap: 4px; color: #A74757;">
+      <span>🚫</span> 3-Way discrepancy hold
+    </div>
+  </div>
+
+  <!-- Card 5: Settled Disbursements -->
+  <div class="kpi-card" style="border-top: 4px solid #52A677; background: #FFFFFF;">
+    <div class="kpi-top">
+      <span class="kpi-label" style="color: #2F7A52;">Settled Payments</span>
+      <div class="kpi-icon" style="background: #E2F5EA; color: #286F48; font-size: 17px;">💸</div>
+    </div>
+    <div class="kpi-val" style="color: #286F48;">{{ stats.payments_completed }}</div>
+    <div class="kpi-sub" style="display: flex; align-items: center; gap: 4px; color: #286F48;">
+      <span>✅</span> Disbursed via RTGS/NEFT
+    </div>
+  </div>
+</div>
+
+<!-- Refined Pastel Analytics Charts Section -->
+<div class="grid-2" style="margin-bottom: 24px;">
+  <!-- Chart 1: Department Budget vs Committed Spend -->
+  <div class="card" style="border: 1px solid #E1E8F2;">
+    <div class="card-header" style="background-color: #E6EFFB; border-bottom: 1px solid #D3E0F2;">
+      <h3><span>📊</span> Departmental Budget vs. Committed Spend (₹ Crores)</h3>
+      <span class="badge" style="background: #FFFFFF; color: #2C5B94;">Fiscal Telemetry</span>
+    </div>
+    <div class="card-body">
+      <div style="height: 300px; position: relative;">
+        <canvas id="deptBudgetChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 2: Autonomous Pipeline Stage Distribution -->
+  <div class="card" style="border: 1px solid #E8E2F4;">
+    <div class="card-header" style="background-color: #EFEAF7; border-bottom: 1px solid #DDD3ED;">
+      <h3><span>🍩</span> Autonomous Pipeline Stage Distribution</h3>
+      <span class="badge" style="background: #FFFFFF; color: #5B418E;">Workflow Distribution</span>
+    </div>
+    <div class="card-body">
+      <div style="height: 300px; position: relative;">
+        <canvas id="pipelineStageChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Chart 3: Quarterly Procurement Spend Velocity -->
+  <div class="card" style="border: 1px solid #DCF0E5;">
+    <div class="card-header" style="background-color: #E7F6ED; border-bottom: 1px solid #CDECD8;">
+      <h3><span>📈</span> Procurement Volume & Spend Velocity</h3>
+      <span class="badge" style="background: #FFFFFF; color: #276B46;">Trend Analysis</span>
+    </div>
+    <div class="card-body">
+      <div style="height: 290px; position: relative;">
+        <canvas id="spendTrendChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 4: Active Supplier Benchmark -->
+  <div class="card" style="border: 1px solid #F5EAE0;">
+    <div class="card-header" style="background-color: #FAF0E6; border-bottom: 1px solid #EFE0D2;">
+      <h3><span>⚖️</span> Active Supplier Quality & Delivery Benchmark</h3>
+      <span class="badge" style="background: #FFFFFF; color: #945B28;">Market Intelligence</span>
+    </div>
+    <div class="card-body">
+      <div style="height: 290px; position: relative;">
+        <canvas id="vendorBenchmarkChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     EMPLOYEE VIEW: My Purchase Requests with Live Status + Rejection Reason
+     =================================================================== -->
+{% if session.get('user_role') == 'employee' %}
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header" style="background: #EEF4FF; border-bottom: 1px solid #D3E0F5;">
+    <h3 style="display:flex; align-items:center; gap:8px;"><span>📋</span> My Purchase Requests</h3>
+    <a href="{{ url_for('agent_requirements') }}" class="btn btn-primary btn-sm">+ New Request</a>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    {% if my_prs %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>PR Budget</th>
+              <th>Status</th>
+              <th>Approver / Notes</th>
+              <th>Actions</th>
+              <th style="width:48px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pr in my_prs %}
+            <tr>
+              <td>
+                <strong style="font-family: monospace; font-size: 12px; color: #28344A;">{{ pr.id }}</strong><br>
+                <small style="color: #8090A8;">{{ pr.created_at[:10] }}</small>
+              </td>
+              <td>
+                <strong>{{ pr.item_name }}</strong><br>
+                <small style="color: #8090A8;">{{ pr.department }}</small>
+              </td>
+              <td>{{ pr.quantity }}</td>
+              <td>{{ pr.formatted_budget }}</td>
+              <td>
+                {% set s = pr.status %}
+                {% if s == 'pending_purchase_approval' %}
+                  <span class="badge badge-warning" style="white-space:nowrap;">⏳ Pending Approval</span>
+                {% elif s == 'purchase_approved' %}
+                  <span class="badge badge-success" style="white-space:nowrap;">✅ Approved</span>
+                {% elif s == 'purchase_rejected' %}
+                  <span class="badge badge-danger" style="white-space:nowrap;">❌ Rejected</span>
+                {% elif s in ('po_generated', 'invoice_matched', 'payment_completed') %}
+                  <span class="badge badge-success" style="white-space:nowrap;">✅ {{ s.replace('_',' ').title() }}</span>
+                {% else %}
+                  <span class="badge badge-info" style="white-space:nowrap;">{{ s.replace('_',' ').title() }}</span>
+                {% endif %}
+              </td>
+              <td style="max-width: 220px;">
+                {% if pr.status == 'purchase_rejected' and pr.approval_comment %}
+                  <div style="background:#FDE8EC; border-left:3px solid #D96B7E; padding:8px 10px; border-radius:4px; font-size:12px; color:#7B2035;">
+                    <strong>Rejected by {{ pr.approver_name or 'Manager' }}:</strong><br>
+                    "{{ pr.approval_comment }}"
+                  </div>
+                {% elif pr.status == 'purchase_approved' and pr.approver_name %}
+                  <div style="background:#E8F7EE; border-left:3px solid #34745A; padding:8px 10px; border-radius:4px; font-size:12px; color:#1E4F3B;">
+                    <strong>Approved by {{ pr.approver_name }}</strong>
+                    {% if pr.approval_comment %}<br>"{{ pr.approval_comment }}"{% endif %}
+                  </div>
+                {% elif pr.status == 'pending_purchase_approval' %}
+                  <span style="color:#8F5927; font-size:12px;">Awaiting manager decision…</span>
+                {% else %}
+                  <span style="color:#8090A8; font-size:12px;">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if pr.status in ('requirements_analyzed',) %}
+                  <a href="{{ url_for('agent_vendors', pr_id=pr.id) }}" class="btn btn-secondary btn-sm">Compare Vendors →</a>
+                {% elif pr.status == 'vendor_compared' %}
+                  <a href="{{ url_for('agent_budget_policy', pr_id=pr.id) }}" class="btn btn-secondary btn-sm">Check Budget →</a>
+                {% elif pr.status == 'pending_purchase_approval' %}
+                  <a href="{{ url_for('agent_budget_policy', pr_id=pr.id) }}" class="btn btn-warning btn-sm" style="font-weight: 600;">Sign Off / Approve →</a>
+                {% elif pr.status in ('purchase_approved',) %}
+                  <a href="{{ url_for('agent_purchase_order', pr_id=pr.id) }}" class="btn btn-primary btn-sm">Issue PO →</a>
+                {% elif pr.status == 'po_generated' %}
+                  <a href="{{ url_for('agent_invoice_matching', pr_id=pr.id) }}" class="btn btn-secondary btn-sm">Invoice →</a>
+                {% elif pr.status == 'purchase_rejected' %}
+                  <a href="{{ url_for('agent_requirements') }}" class="btn btn-secondary btn-sm">New Request</a>
+                {% else %}
+                  <a href="{{ url_for('agent_budget_policy', pr_id=pr.id) }}" class="btn btn-secondary btn-sm" style="font-size:11px;">View</a>
+                {% endif %}
+              </td>
+              <td style="text-align:center; padding: 8px 4px;">
+                <form action="{{ url_for('delete_purchase_request', pr_id=pr.id) }}" method="POST"
+                      onsubmit="return confirm('Delete request {{ pr.id }}? This cannot be undone.')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" title="Delete" style="background:none; border:none; cursor:pointer; color:#C0392B; font-size:15px; padding:2px 6px; border-radius:4px; transition:background 0.15s;" onmouseover="this.style.background='#FDE8EC'" onmouseout="this.style.background='none'">🗑</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state" style="border:none; padding:30px;">
+        <div class="empty-icon">📄</div>
+        <h3>No Requests Yet</h3>
+        <p>You haven't submitted any purchase requests. Click below to get started.</p>
+        <a href="{{ url_for('agent_requirements') }}" class="btn btn-primary">Create First Request</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ===================================================================
+     UNIVERSAL: Inline Pending Approval Queue on Dashboard (All Users)
+     =================================================================== -->
+<div class="card" style="margin-bottom: 24px; border: 1px solid #EFE0D2;">
+  <div class="card-header pastel-peach">
+    <h3 style="display:flex; align-items:center; gap:8px;"><span>🛡️</span> Pending Purchase Approvals — Quick Action</h3>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span class="badge badge-warning">{{ pending_prs_mgr|length }} Awaiting Decision</span>
+      <a href="{{ url_for('approvals') }}" class="btn btn-secondary btn-sm">Full Approval Center →</a>
+    </div>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if pending_prs_mgr %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>PR ID / Dept</th>
+              <th>Requested By</th>
+              <th>Item &amp; Qty</th>
+              <th>Supplier</th>
+              <th>Total Cost</th>
+              <th style="min-width:300px;">Your Decision</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pr in pending_prs_mgr %}
+            <tr>
+              <td>
+                <strong style="font-family:monospace; font-size:12px;">{{ pr.id }}</strong><br>
+                <small style="color:#8090A8;">{{ pr.department }}</small>
+              </td>
+              <td>
+                <span style="font-size:13px; color:#28344A;">{{ pr.requester_name or '—' }}</span>
+              </td>
+              <td>
+                <strong>{{ pr.item_name }}</strong><br>
+                <small>{{ pr.quantity }} unit(s)</small>
+              </td>
+              <td>
+                <strong>{{ pr.vendor_name or '—' }}</strong><br>
+                <small style="color:#8090A8;">{{ pr.delivery_days or '—' }} day SLA</small>
+              </td>
+              <td>
+                <strong style="font-size:14px; color:#28344A;">{{ pr.formatted_total }}</strong>
+              </td>
+              <td>
+                <form action="{{ url_for('approvals') }}" method="POST" style="display:flex; flex-direction:column; gap:6px;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="pr_id" value="{{ pr.id }}">
+                  <input type="hidden" name="return_url" value="{{ url_for('agent_budget_policy', pr_id=pr.id) }}">
+                  <input type="text" name="comment" class="form-control" style="font-size:12px; padding:5px 8px;"
+                         placeholder="Decision notes (required)..." required
+                         value="Approved as per departmental procurement policy.">
+                  <div style="display:flex; gap:6px;">
+                    <button type="submit" name="decision" value="approved"
+                            class="btn btn-success btn-sm" style="flex:1;">✔ Approve</button>
+                    <button type="submit" name="decision" value="rejected"
+                            class="btn btn-danger btn-sm" style="flex:1;"
+                            onclick="this.form.comment.value = this.form.comment.value || 'Rejected due to policy violation.';">✖ Reject</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state" style="border:none; padding:26px;">
+        <div class="empty-icon">✅</div>
+        <h3>All Clear</h3>
+        <p>No purchase requests are currently awaiting your approval.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Server-side data payload (injected by Flask/Jinja2) -->
+<script id="dashboard-chart-data" type="application/json">
+{{ chart_data | tojson | safe }}
+</script>
+
+<script>
+  // Dynamic Greeting by Time of Day
+  (function() {
+    const hour = new Date().getHours();
+    let timeGreeting = "Good afternoon";
+    if (hour < 12) {
+      timeGreeting = "Good morning";
+    } else if (hour >= 17) {
+      timeGreeting = "Good evening";
+    }
+    const elem = document.getElementById('dynamicGreeting');
+    if (elem) {
+      elem.innerText = timeGreeting + ", {{ session.get('user_name', 'Executive') }}! 👋";
+    }
+  })();
+
+  // Curated Enterprise Pastel Palette Combinations
+  const PASTEL_MINT = '#CDECD8';
+  const PASTEL_MINT_BORDER = '#429363';
+  const PASTEL_BLUE = '#CCE0F8';
+  const PASTEL_BLUE_BORDER = '#5D8AC9';
+  const PASTEL_LAVENDER = '#E2D8F7';
+  const PASTEL_LAVENDER_BORDER = '#886FC0';
+  const PASTEL_PEACH = '#FCE2CB';
+  const PASTEL_PEACH_BORDER = '#DB8E4C';
+  const PASTEL_ROSE = '#F9D4DE';
+  const PASTEL_ROSE_BORDER = '#C3546F';
+  const PASTEL_CYAN = '#C7EFE9';
+  const PASTEL_CYAN_BORDER = '#45A496';
+  const TEXT_PRIMARY = '#28344A';
+  const TEXT_SECONDARY = '#687386';
+
+  Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+  Chart.defaults.color = TEXT_SECONDARY;
+
+  // Server-side data extracted from JSON payload
+  const rawChartPayload = document.getElementById('dashboard-chart-data');
+  const rawChartData = rawChartPayload ? JSON.parse(rawChartPayload.textContent || '{}') : {};
+  const chartData = {
+    deptLabels: rawChartData.dept_labels || [],
+    deptTotal: rawChartData.dept_total || [],
+    deptCommitted: rawChartData.dept_committed || [],
+    stageLabels: rawChartData.stage_labels || [],
+    stageData: rawChartData.stage_data || [],
+    vendorNames: rawChartData.vendor_names || [],
+    vendorRatings: rawChartData.vendor_ratings || [],
+    vendorDelivery: rawChartData.vendor_delivery || []
+  };
+
+  // Chart 1: Department Budget vs Spend (Bar Chart)
+  const ctx1 = document.getElementById('deptBudgetChart').getContext('2d');
+  new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: chartData.deptLabels,
+      datasets: [
+        {
+          label: 'Total Budget (₹ Cr)',
+          data: chartData.deptTotal,
+          backgroundColor: PASTEL_MINT,
+          borderColor: PASTEL_MINT_BORDER,
+          borderWidth: 1.5,
+          borderRadius: 6
+        },
+        {
+          label: 'Committed Spend (₹ Cr)',
+          data: chartData.deptCommitted,
+          backgroundColor: PASTEL_BLUE,
+          borderColor: PASTEL_BLUE_BORDER,
+          borderWidth: 1.5,
+          borderRadius: 6
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 14, color: TEXT_PRIMARY, font: { weight: 600 } } },
+        tooltip: {
+          backgroundColor: '#FFFFFF',
+          titleColor: TEXT_PRIMARY,
+          bodyColor: TEXT_SECONDARY,
+          borderColor: '#E4E7EE',
+          borderWidth: 1,
+          padding: 10,
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ₹' + context.parsed.y + ' Crore';
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#F0F2F6' },
+          ticks: {
+            callback: function(value) { return '₹' + value + ' Cr'; }
+          }
+        }
+      }
+    }
+  });
+
+  // Chart 2: Pipeline Stage Distribution (Doughnut Chart)
+  const ctx2 = document.getElementById('pipelineStageChart').getContext('2d');
+  new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: chartData.stageLabels,
+      datasets: [{
+        data: chartData.stageData,
+        backgroundColor: [
+          PASTEL_BLUE,
+          PASTEL_LAVENDER,
+          PASTEL_PEACH,
+          PASTEL_CYAN,
+          PASTEL_ROSE,
+          PASTEL_MINT
+        ],
+        borderColor: [
+          PASTEL_BLUE_BORDER,
+          PASTEL_LAVENDER_BORDER,
+          PASTEL_PEACH_BORDER,
+          PASTEL_CYAN_BORDER,
+          PASTEL_ROSE_BORDER,
+          PASTEL_MINT_BORDER
+        ],
+        borderWidth: 1.5,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 12, color: TEXT_PRIMARY, font: { size: 12 } } },
+        tooltip: {
+          backgroundColor: '#FFFFFF',
+          titleColor: TEXT_PRIMARY,
+          bodyColor: TEXT_SECONDARY,
+          borderColor: '#E4E7EE',
+          borderWidth: 1,
+          padding: 10
+        }
+      },
+      cutout: '62%'
+    }
+  });
+
+  // Chart 3: Spend Velocity Trend (Smooth Area Chart)
+  const ctx3 = document.getElementById('spendTrendChart').getContext('2d');
+  new Chart(ctx3, {
+    type: 'line',
+    data: {
+      labels: ['Q1 FY26', 'Q2 FY26', 'Q3 FY26', 'Q4 FY26 (Forecast)', 'Q1 FY27 (Plan)'],
+      datasets: [
+        {
+          label: 'Disbursed Payments (₹ Cr)',
+          data: [1.2, 1.8, 2.4, 2.8, 3.2],
+          backgroundColor: 'rgba(205, 236, 216, 0.45)',
+          borderColor: PASTEL_MINT_BORDER,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: PASTEL_MINT,
+          pointBorderColor: PASTEL_MINT_BORDER,
+          pointRadius: 4
+        },
+        {
+          label: 'Purchase Commitments (₹ Cr)',
+          data: [1.5, 2.1, 2.5, 3.1, 3.6],
+          backgroundColor: 'rgba(204, 224, 248, 0.4)',
+          borderColor: PASTEL_BLUE_BORDER,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: PASTEL_BLUE,
+          pointBorderColor: PASTEL_BLUE_BORDER,
+          pointRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 14, color: TEXT_PRIMARY, font: { weight: 600 } } },
+        tooltip: {
+          backgroundColor: '#FFFFFF',
+          titleColor: TEXT_PRIMARY,
+          bodyColor: TEXT_SECONDARY,
+          borderColor: '#E4E7EE',
+          borderWidth: 1,
+          padding: 10
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#F0F2F6' },
+          ticks: {
+            callback: function(value) { return '₹' + value + ' Cr'; }
+          }
+        }
+      }
+    }
+  });
+
+  // Chart 4: Supplier Performance Benchmark (Horizontal Bar Chart)
+  const ctx4 = document.getElementById('vendorBenchmarkChart').getContext('2d');
+  new Chart(ctx4, {
+    type: 'bar',
+    indexAxis: 'y',
+    data: {
+      labels: chartData.vendorNames,
+      datasets: [
+        {
+          label: 'Quality Rating (Max 5.0)',
+          data: chartData.vendorRatings,
+          backgroundColor: PASTEL_LAVENDER,
+          borderColor: PASTEL_LAVENDER_BORDER,
+          borderWidth: 1.5,
+          borderRadius: 4
+        },
+        {
+          label: 'Delivery Lead Time (Days)',
+          data: chartData.vendorDelivery,
+          backgroundColor: PASTEL_PEACH,
+          borderColor: PASTEL_PEACH_BORDER,
+          borderWidth: 1.5,
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 14, color: TEXT_PRIMARY, font: { weight: 600 } } },
+        tooltip: {
+          backgroundColor: '#FFFFFF',
+          titleColor: TEXT_PRIMARY,
+          bodyColor: TEXT_SECONDARY,
+          borderColor: '#E4E7EE',
+          borderWidth: 1,
+          padding: 10
+        }
+      },
+      scales: {
+        x: { grid: { color: '#F0F2F6' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+</script>
+{% endblock %}

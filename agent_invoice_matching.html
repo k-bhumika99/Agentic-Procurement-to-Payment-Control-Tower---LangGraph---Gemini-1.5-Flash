@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Agent 5: 3-Way Invoice Matching - Control Tower{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="header-title">
+    <h1>Agent 5: 3-Way Invoice Matching & Exception Detection</h1>
+    <p>Ingests supplier invoices (PDF/Image), extracts structured accounting lines with OCR, and enforces strict 3-way reconciliation against PO and warehouse Goods Receipts.</p>
+  </div>
+  <div class="header-actions">
+    {% if po %}
+      <div style="display: flex; gap: 8px;">
+        <span class="badge badge-info" style="padding: 6px 12px; font-size: 12px;">Active PO: {{ po.id }}</span>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Workflow Progress Indicator -->
+<div class="workflow-tracker">
+  <div class="step-node completed">✓ 1. Requirements</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 2. Vendor Comparison</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 3. Budget & Policy</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node completed">✓ 4. PO Issuance</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node active">5. Invoice Matching (Active)</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">6. Payment</div>
+</div>
+
+{% if po %}
+  <div class="grid-2">
+    <!-- Invoice Upload & Ingestion Form -->
+    <div class="card">
+      <div class="card-header pastel-blush">
+        <h3><span>📤</span> Invoice Document Ingestion</h3>
+        <span class="badge badge-info">Agent 5 Input</span>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('agent_invoice_matching') }}" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="po_id" value="{{ po.id }}">
+          <input type="hidden" name="pr_id" value="{{ current_pr.id }}">
+
+          <div class="form-group">
+            <label class="form-label" for="invoice_file">Upload Supplier Commercial Invoice (PDF, PNG, JPG)</label>
+            <input type="file" id="invoice_file" name="invoice_file" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
+            <span class="form-help">Supported formats: PDF with native text, or PNG/JPG image for OCR extraction.</span>
+          </div>
+
+          <!-- Quick Test Sample Invoices for Instant Demonstration -->
+          <div style="background: var(--bg-ivory); border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 20px;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+              🧪 Or Simulate Test Invoice Scenarios:
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button type="submit" name="sample_type" value="perfect_match" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start;">
+                🟢 <strong>Scenario A:</strong> Perfect 3-Way Match — {{ po.quantity }} units @ {{ po.formatted_unit_price }} · GRN Accepted
+              </button>
+              <button type="submit" name="sample_type" value="price_mismatch" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; color: var(--status-danger-text);">
+                🔴 <strong>Scenario B:</strong> Price Overbilling — {{ po.quantity }} units @ inflated rate (+₹4,000/unit variance)
+              </button>
+              <button type="submit" name="sample_type" value="quantity_mismatch" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; color: var(--status-warning-text);">
+                🟡 <strong>Scenario C:</strong> Quantity Mismatch — Billed {{ po.quantity + 50 }} units vs {{ po.quantity }} ordered
+              </button>
+            </div>
+          </div>
+
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">
+            🔍 Ingest, Extract OCR & Execute 3-Way Match
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Active PO & ERP Warehouse Status -->
+    <div class="card">
+      <div class="card-header pastel-peach">
+        <h3><span>📦</span> PO & ERP Warehouse Baseline Data</h3>
+        <span class="badge badge-success">3-Way Reference</span>
+      </div>
+      <div class="card-body">
+        <table class="table" style="margin-bottom: 16px;">
+          <tr>
+            <td><strong>PO Reference:</strong></td>
+            <td><strong>{{ po.id }}</strong> (Issued on {{ po.created_at }})</td>
+          </tr>
+          <tr>
+            <td><strong>Supplier:</strong></td>
+            <td>{{ vendor.name }}</td>
+          </tr>
+          <tr>
+            <td><strong>Ordered Item:</strong></td>
+            <td>{{ po.item_name }}</td>
+          </tr>
+          <tr>
+            <td><strong>Authorized Quantity:</strong></td>
+            <td>{{ po.quantity }} units</td>
+          </tr>
+          <tr>
+            <td><strong>Contracted Unit Rate:</strong></td>
+            <td>{{ po.formatted_unit_price }}</td>
+          </tr>
+          <tr>
+            <td><strong>Contracted Total:</strong></td>
+            <td><strong>{{ po.formatted_total }}</strong></td>
+          </tr>
+          <tr>
+            <td><strong>ERP Goods Receipt (GRN):</strong></td>
+            <td>
+              {% if grn %}
+                <span class="badge badge-success">{{ grn.id }}</span>
+                <span style="font-size: 12px; margin-left: 6px;">{{ grn.quantity_received }} units received ({{ grn.inspection_status }})</span>
+              {% else %}
+                <span class="badge badge-warning">Awaiting Warehouse Check-in</span>
+              {% endif %}
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3-Way Matching Results Display -->
+  {% if invoice %}
+    <div class="card" style="border: 2px solid {% if invoice.match_status == 'matched' %}#34745A{% else %}#A74757{% endif %};">
+      <div class="card-header {% if invoice.match_status == 'matched' %}pastel-mint{% else %}pastel-blush{% endif %}">
+        <div>
+          <span style="font-size: 11px; text-transform: uppercase; font-weight: 700;">3-Way Reconciliation Result</span>
+          <h3 style="margin-top: 2px;">
+            Invoice: {{ invoice.invoice_number }} &bull; Supplier: {{ invoice.vendor_name }}
+          </h3>
+        </div>
+        <div>
+          {% if invoice.match_status == 'matched' %}
+            <span class="badge badge-success" style="font-size: 13px; padding: 6px 14px;">✅ 3-Way Matched</span>
+          {% elif invoice.match_status == 'mismatch' %}
+            <span class="badge badge-danger" style="font-size: 13px; padding: 6px 14px;">❌ Discrepancy Mismatch</span>
+          {% else %}
+            <span class="badge badge-warning" style="font-size: 13px; padding: 6px 14px;">⚠️ Manual Review Required</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- 3-Way Comparative Reconciliation Table -->
+        <div class="table-responsive" style="margin-bottom: 20px;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Audit Parameter</th>
+                <th>Contracted PO Value</th>
+                <th>Supplier Invoice OCR</th>
+                <th>ERP Goods Receipt</th>
+                <th>Variance Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Purchase Order ID</strong></td>
+                <td>{{ po.id }}</td>
+                <td>{{ match_analysis.extracted_po|default(po.id) }}</td>
+                <td>{{ grn.po_id|default('N/A') }}</td>
+                <td>
+                  {% if match_analysis.po_matched %}
+                    <span class="badge badge-success">Match</span>
+                  {% else %}
+                    <span class="badge badge-danger">Mismatch</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Quantity</strong></td>
+                <td>{{ po.quantity }} units</td>
+                <td>{{ invoice.quantity }} units</td>
+                <td>{{ grn.quantity_received|default(0) }} units</td>
+                <td>
+                  {% if match_analysis.quantity_matched %}
+                    <span class="badge badge-success">Match (0% var)</span>
+                  {% else %}
+                    <span class="badge badge-danger">Variance: {{ invoice.quantity - po.quantity }} units</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Unit Rate</strong></td>
+                <td>{{ po.formatted_unit_price }}</td>
+                <td>{{ match_analysis.formatted_invoice_unit_price }}</td>
+                <td>-</td>
+                <td>
+                  {% if match_analysis.price_matched %}
+                    <span class="badge badge-success">Match</span>
+                  {% else %}
+                    <span class="badge badge-danger">Price Variance</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Total Invoice Amount</strong></td>
+                <td>{{ po.formatted_total }}</td>
+                <td><strong>{{ invoice.formatted_total }}</strong></td>
+                <td>-</td>
+                <td>
+                  {% if match_analysis.total_matched %}
+                    <span class="badge badge-success">Match</span>
+                  {% else %}
+                    <span class="badge badge-danger">Discrepancy</span>
+                  {% endif %}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Explanation Banner -->
+        <div style="padding: 14px; border-radius: var(--radius-sm); margin-bottom: 20px; font-size: 13.5px;
+          {% if invoice.match_status == 'matched' %}background: #F0F9F4; color: #1E4F3B; border-left: 4px solid #34745A;
+          {% else %}background: #FDF1F3; color: #8C3745; border-left: 4px solid #A74757;{% endif %}">
+          <strong>Reconciliation Analysis:</strong> {{ match_analysis.explanation }}
+        </div>
+
+        <!-- Governance Gate Routing -->
+        {% if invoice.match_status == 'matched' %}
+          <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-ivory); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div>
+              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-primary);">All 3-Way Conditions Met</h4>
+              <p style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">
+                Zero unauthorized variance detected. Invoice is certified for payment authorization.
+              </p>
+            </div>
+            <a href="{{ url_for('agent_approval_payment', pr_id=current_pr.id) }}" class="btn btn-primary btn-lg">
+              Proceed to Agent 6: Approval & Payment &rarr;
+            </a>
+          </div>
+        {% else %}
+          <div style="background: var(--status-danger-bg); padding: 16px; border-radius: var(--radius-sm); border: 1px solid #F0C4CF;">
+            <h4 style="font-size: 15px; font-weight: 700; color: var(--status-danger-text);">⛔ Payment Execution Blocked</h4>
+            <p style="font-size: 13px; color: var(--status-danger-text); margin-top: 4px;">
+              According to corporate anti-fraud and governance policy, invoices with price variance, quantity discrepancies, or unverified deliveries are strictly prohibited from proceeding to payment.
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <h3>No Purchase Order Active</h3>
+    <p>Please issue a Purchase Order in Agent 4 before performing 3-way invoice matching.</p>
+    <a href="{{ url_for('agent_purchase_order') }}" class="btn btn-primary">Go to Agent 4: Purchase Orders</a>
+  </div>
+{% endif %}
+
+{% endblock %}

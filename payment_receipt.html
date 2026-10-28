@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payment Receipt {{ payment.id }} - Procure Tower</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #28344A;
+      margin: 0;
+      padding: 30px 20px 60px 20px;
+      background: #F4F6F9;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+    .action-bar {
+      max-width: 860px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #FFFFFF;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: 1px solid #E4E7EE;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .action-bar-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #718CC4;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #5B74AB;
+    }
+    .btn-success {
+      background: #34745A;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #285A46;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #CBD5E1;
+      color: #475569;
+    }
+    .btn-outline:hover {
+      background: #F1F5F9;
+    }
+    .receipt-container {
+      max-width: 860px;
+      margin: 0 auto;
+      border: 1px solid #E4E7EE;
+      padding: 40px;
+      border-radius: 8px;
+      background: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      position: relative;
+    }
+    .receipt-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 2px solid #34745A;
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+    .company-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #28344A;
+    }
+    .receipt-number-box {
+      text-align: right;
+    }
+    .receipt-number {
+      font-size: 20px;
+      font-weight: 700;
+      color: #34745A;
+    }
+    .settlement-badge {
+      display: inline-block;
+      background: #E8F5E9;
+      color: #2E7D32;
+      border: 1px solid #A5D6A7;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .info-grid {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      gap: 24px;
+    }
+    .info-card {
+      flex: 1;
+      background: #FAF9F6;
+      border: 1px solid #E4E7EE;
+      padding: 16px;
+      border-radius: 6px;
+    }
+    .info-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #687386;
+      margin-bottom: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    th {
+      background-color: #E8F0FE;
+      color: #28344A;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #E4E7EE;
+    }
+    .total-box {
+      margin-left: auto;
+      width: 320px;
+      margin-bottom: 30px;
+      background: #F9FBFA;
+      border: 1px solid #D0E4D8;
+      border-radius: 6px;
+      padding: 16px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+    }
+    .total-row.grand {
+      border-top: 2px solid #34745A;
+      font-size: 18px;
+      font-weight: 800;
+      color: #1E4F3B;
+      padding-top: 10px;
+      margin-top: 6px;
+    }
+    .signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #E4E7EE;
+    }
+    .sign-box {
+      text-align: center;
+      width: 220px;
+    }
+    .sign-line {
+      border-bottom: 1px solid #28344A;
+      margin-bottom: 8px;
+      height: 40px;
+    }
+    .watermark-stamp {
+      position: absolute;
+      top: 130px;
+      right: 40px;
+      border: 3px dashed #34745A;
+      border-radius: 8px;
+      padding: 10px 20px;
+      color: #34745A;
+      font-weight: 800;
+      font-size: 14px;
+      text-transform: uppercase;
+      transform: rotate(-8deg);
+      opacity: 0.85;
+      background: rgba(240, 250, 244, 0.85);
+      text-align: center;
+    }
+    @media print {
+      body { padding: 0; background: #FFFFFF; }
+      .action-bar { display: none !important; }
+      .receipt-container { border: none; padding: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Action & Download Bar -->
+  <div class="action-bar">
+    <div>
+      <a href="{{ url_for('agent_approval_payment', pr_id=current_pr.id) }}" class="btn btn-outline">
+        &larr; Return to Agent 6
+      </a>
+    </div>
+    <div class="action-bar-buttons">
+      <button class="btn btn-primary" onclick="window.print()">
+        🖨️ Print Receipt
+      </button>
+      <button class="btn btn-success" onclick="window.print()">
+        📥 Download Receipt (PDF)
+      </button>
+    </div>
+  </div>
+
+  <div class="receipt-container" id="printable-receipt">
+    <div class="watermark-stamp">
+      ✔ PAID &amp; SETTLED<br>
+      <span style="font-size: 10px; font-weight: 600;">CONTROL TOWER CERTIFIED</span>
+    </div>
+
+    <div class="receipt-header">
+      <div>
+        <div class="company-title">Procure Tower Enterprise Corp</div>
+        <div style="color: #687386; font-size: 12px; margin-top: 4px;">
+          Corporate Treasury &bull; Financial Governance Division &bull; GSTIN: 29AAAAA0000A1Z5
+        </div>
+      </div>
+      <div class="receipt-number-box">
+        <div style="font-size: 11px; text-transform: uppercase; color: #687386; font-weight: 700;">Official Settlement Receipt</div>
+        <div class="receipt-number">{{ payment.id }}</div>
+        <div class="settlement-badge">Status: Settled &bull; {{ payment.payment_method|default('Online') }}</div>
+        <div style="font-size: 12px; color: #687386; margin-top: 4px;">Processed At: {{ payment.processed_at }}</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-title">Beneficiary (Vendor)</div>
+        <div style="font-size: 15px; font-weight: 700; color: #28344A;">{{ invoice.vendor_name }}</div>
+        <div style="color: #687386; font-size: 12.5px; margin-top: 4px; line-height: 1.6;">
+          Supplier Contact: {{ vendor.contact_email|default('procurement@vendor.com') }}<br>
+          Vendor Rating: ⭐ {{ vendor.rating|default('4.8') }} / 5.0<br>
+          Warranty SLA: {{ vendor.warranty_years|default('2') }} Years OEM Coverage
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-title">Disbursement &amp; Audit Reference</div>
+        <div style="font-size: 13px; color: #28344A; line-height: 1.7;">
+          <div><strong>Payment Method:</strong> {{ payment.payment_method|default('Online') }}</div>
+          <div><strong>Bank / Desk Ref:</strong> <code style="font-size: 12px; background: #EAEFF7; padding: 2px 6px; border-radius: 3px;">{{ payment.transaction_reference }}</code></div>
+          <div><strong>Purchase Order:</strong> {{ po.id }}</div>
+          <div><strong>Invoice Ref:</strong> {{ invoice.invoice_number }}</div>
+          <div><strong>Requisition Ref:</strong> {{ current_pr.id }} ({{ current_pr.department }} Dept)</div>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item Description</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th>Settled Amount (INR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <strong>{{ invoice.item_name }}</strong><br>
+            <small style="color: #687386;">{{ vendor.product_name|default(invoice.item_name) }} &bull; Contract: {{ po.delivery_terms }} / {{ po.payment_terms }}</small>
+          </td>
+          <td><strong>{{ invoice.quantity }}</strong> units</td>
+          <td>{{ invoice.formatted_unit_price|default(po.formatted_unit_price) }}</td>
+          <td><strong style="color: #1E4F3B; font-size: 14px;">{{ payment.formatted_amount }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="total-box">
+      <div class="total-row">
+        <span>Invoice Amount:</span>
+        <span>{{ payment.formatted_amount }}</span>
+      </div>
+      <div class="total-row">
+        <span>Taxes &amp; Deductions:</span>
+        <span>₹0.00 (Net Settled)</span>
+      </div>
+      <div class="total-row grand">
+        <span>Total Disbursed:</span>
+        <span>{{ payment.formatted_amount }}</span>
+      </div>
+      <div style="font-size: 11px; color: #34745A; margin-top: 6px; text-align: right;">
+        Settled via {{ payment.payment_method|default('Online') }}
+      </div>
+    </div>
+
+    <div style="background: #FAF9F6; border: 1px solid #E4E7EE; padding: 14px; border-radius: 6px; font-size: 12px; color: #687386; margin-bottom: 20px;">
+      <strong>Automated Control Tower Governance Attestation:</strong><br>
+      ✔ <strong>Agent 1:</strong> Requirement validated and allocated under departmental budget.<br>
+      ✔ <strong>Agent 2:</strong> Competitive supplier scoring and cost optimization verified.<br>
+      ✔ <strong>Agent 3:</strong> Department budget availability & executive threshold approvals certified.<br>
+      ✔ <strong>Agent 4:</strong> Contract terms and delivery SLA codified into Purchase Order {{ po.id }}.<br>
+      ✔ <strong>Agent 5:</strong> 3-Way Match certified with 0% unauthorized variance against GRN warehouse receipt.<br>
+      ✔ <strong>Agent 6:</strong> Cryptographic idempotency key <code>{{ payment.idempotency_key }}</code> verified to prevent duplicate disbursements.
+    </div>
+
+    <div class="signatures">
+      <div class="sign-box">
+        <div class="sign-line"></div>
+        <div style="font-weight: 700; font-size: 12px;">Accounts Payable / Treasury</div>
+        <div style="color: #687386; font-size: 11px;">Procure Tower Enterprise Corp</div>
+      </div>
+
+      <div class="sign-box">
+        <div class="sign-line"></div>
+        <div style="font-weight: 700; font-size: 12px;">Beneficiary Acknowledgment</div>
+        <div style="color: #687386; font-size: 11px;">{{ invoice.vendor_name }}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

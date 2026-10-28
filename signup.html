@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Control Tower</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ECE8F8 0%, #DFDAF5 50%, #D5CEF0 100%);
+      padding: 30px 20px;
+    }
+    .auth-page-wrapper {
+      max-width: 1080px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+    }
+    /* Left Illustration Column */
+    .auth-illustration-side {
+      flex: 1;
+      max-width: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-illustration-img {
+      width: 100%;
+      height: auto;
+      max-height: 640px;
+      object-fit: cover;
+      border-radius: 28px;
+      box-shadow: 0 20px 48px rgba(105, 95, 165, 0.22);
+      display: block;
+    }
+    /* Right Card Column */
+    .auth-card-side {
+      flex: 1;
+      max-width: 460px;
+      width: 100%;
+    }
+    .auth-card {
+      background: #FFFFFF;
+      width: 100%;
+      border-radius: 24px;
+      border: 1px solid rgba(220, 215, 245, 0.8);
+      box-shadow: 0 24px 56px rgba(110, 95, 175, 0.16);
+      padding: 34px 32px;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .auth-brand-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 10px auto;
+      background: linear-gradient(135deg, #6C7BB8 0%, #5664A3 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(108, 123, 184, 0.35);
+    }
+    .auth-brand-icon img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .auth-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1F273D;
+      letter-spacing: -0.3px;
+    }
+    .auth-header p {
+      color: #79839F;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #273148;
+      margin-bottom: 6px;
+    }
+    .form-control-custom {
+      width: 100%;
+      background: #F3F5FC;
+      border: 1px solid #DCE2F2;
+      border-radius: 9px;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      color: #1F273D;
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .form-control-custom:focus {
+      background: #FFFFFF;
+      border-color: #727FB7;
+      box-shadow: 0 0 0 3px rgba(114, 127, 183, 0.2);
+    }
+    .form-control-custom::placeholder {
+      color: #9AA4BE;
+    }
+    .form-select-custom {
+      width: 100%;
+      background: #F3F5FC;
+      border: 1px solid #DCE2F2;
+      border-radius: 9px;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      color: #1F273D;
+      outline: none;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .form-select-custom:focus {
+      background: #FFFFFF;
+      border-color: #727FB7;
+    }
+    .form-compliance-note {
+      font-size: 11.5px;
+      color: #7E879F;
+      margin: 12px 0 14px 0;
+      line-height: 1.4;
+    }
+    .btn-auth-submit {
+      width: 100%;
+      background: #727FB7;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 9px;
+      padding: 12px;
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(114, 127, 183, 0.32);
+    }
+    .btn-auth-submit:hover {
+      background: #606CA6;
+      box-shadow: 0 6px 18px rgba(114, 127, 183, 0.42);
+      transform: translateY(-1px);
+    }
+    .auth-switch-link {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #79839F;
+    }
+    .auth-switch-link a {
+      color: #5566B8;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .auth-switch-link a:hover {
+      text-decoration: underline;
+    }
+    /* Mobile Responsive */
+    @media (max-width: 860px) {
+      .auth-page-wrapper {
+        flex-direction: column;
+        gap: 20px;
+      }
+      .auth-illustration-side {
+        max-width: 380px;
+      }
+      .auth-illustration-img {
+        max-height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-page-wrapper">
+    <!-- Left: Exact Illustration from Screenshot -->
+    <div class="auth-illustration-side">
+      <img src="{{ url_for('static', filename='images/signup_illustration.png') }}"
+           alt="Join Control Tower"
+           class="auth-illustration-img">
+    </div>
+
+    <!-- Right: Signup Form Card -->
+    <div class="auth-card-side">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-brand-icon">
+            <img src="{{ url_for('static', filename='images/auth_logo.png') }}" alt="Logo">
+          </div>
+          <h2>Join Control Tower</h2>
+          <p>Create your enterprise procurement account</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages" style="margin-bottom: 14px;">
+              {% for category, message in messages %}
+                <div class="flash-alert {{ category }}" style="font-size: 12.5px; padding: 9px 12px; border-radius: 8px; margin-bottom: 8px; background: {% if category == 'success' %}#E8F7EE{% else %}#FDE8EC{% endif %}; color: {% if category == 'success' %}#1E4F3B{% else %}#7B2035{% endif %}; border: 1px solid {% if category == 'success' %}#B4E6C8{% else %}#F5C6CE{% endif %};">
+                  <span>{% if category == 'success' %}✅{% else %}⚠️{% endif %}</span>
+                  <div>{{ message }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('signup') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+          <div class="form-group">
+            <label class="form-label" for="full_name">Full Name</label>
+            <input type="text" id="full_name" name="full_name" class="form-control-custom"
+                   placeholder="e.g. Ramesh Kumar" required value="{{ full_name|default('') }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">Work Email</label>
+            <input type="email" id="email" name="email" class="form-control-custom"
+                   placeholder="name@procurecorp.com" required value="{{ email|default('') }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="department">Department</label>
+            <select id="department" name="department" class="form-select-custom" required>
+              <option value="IT" {% if department == 'IT' %}selected{% endif %}>IT Department</option>
+              <option value="Operations" {% if department == 'Operations' %}selected{% endif %}>Operations</option>
+              <option value="Finance" {% if department == 'Finance' %}selected{% endif %}>Finance & Accounts</option>
+              <option value="Human Resources" {% if department == 'Human Resources' %}selected{% endif %}>Human Resources</option>
+              <option value="Marketing" {% if department == 'Marketing' %}selected{% endif %}>Marketing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control-custom"
+                   placeholder="Min. 8 chars" required minlength="8">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" class="form-control-custom"
+                   placeholder="Confirm" required minlength="8">
+          </div>
+
+          <div class="form-compliance-note">
+            * Public accounts are provisioned with default employee privileges for compliance.
+          </div>
+
+          <button type="submit" class="btn-auth-submit">
+            Create Employee Account
+          </button>
+        </form>
+
+        <div class="auth-switch-link">
+          Already have an account? <a href="{{ url_for('signin') }}">Sign In</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

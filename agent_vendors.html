@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Agent 2: Vendor Comparison - Control Tower{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="header-title">
+    <h1>Agent 2: Intelligent Vendor Comparison</h1>
+    <p>Automates market research, scores vendor proposals against cost, delivery timeline, warranty, and quality, and recommends the best supplier.</p>
+  </div>
+  <div class="header-actions">
+    {% if comparison and comparison.recommended_vendor %}
+      <span class="badge badge-success">Supplier Found</span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Workflow Progress Indicator -->
+<div class="workflow-tracker">
+  <div class="step-node completed">✓ 1. Requirements</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node active">2. Vendor Comparison (Active)</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">3. Budget & Policy</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">4. PO Issuance</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">5. Invoice Matching</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step-node">6. Payment Settlement</div>
+</div>
+
+{% if current_pr %}
+  <!-- Active PR Summary Bar -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-body" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; gap: 20px; font-size: 13px; flex-wrap: wrap; align-items: center;">
+        <div><strong>PR:</strong> {{ current_pr.id }}</div>
+        <div><strong>Item:</strong> {{ current_pr.item_name }} ({{ current_pr.quantity }} units)</div>
+        <div><strong>Target Budget:</strong> {{ current_pr.formatted_budget }}</div>
+        {% if current_pr.min_ram_gb and current_pr.min_ram_gb > 0 %}
+          <div><strong>Min RAM:</strong> {{ current_pr.min_ram_gb }} GB</div>
+        {% endif %}
+        {% if current_pr.min_storage_gb and current_pr.min_storage_gb > 0 %}
+          <div><strong>Min SSD:</strong> {{ current_pr.min_storage_gb }} GB</div>
+        {% endif %}
+        <div><strong>SLA:</strong> {{ current_pr.delivery_deadline_days }} Days</div>
+      </div>
+      <div>
+        <form method="GET" action="{{ url_for('agent_vendors') }}" style="display: flex; gap: 8px;">
+          <select name="pr_id" class="form-select form-select-sm" onchange="this.form.submit()" style="padding: 4px 8px; font-size: 12px;">
+            {% for pr in all_prs %}
+              <option value="{{ pr.id }}" {% if pr.id == current_pr.id %}selected{% endif %}>{{ pr.id }} ({{ pr.item_name }})</option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Supplier Evaluation Table (Placed at Top) -->
+  {% if comparison and comparison.vendors %}
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-header pastel-lavender">
+      <h3><span>📊</span> Supplier Evaluation Matrix — {{ current_pr.item_name }}</h3>
+      <span class="badge badge-lavender">{{ comparison.total_evaluated|default(0) }} Suppliers Evaluated</span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Supplier</th>
+              <th>Product &amp; Specs</th>
+              <th>Unit Price</th>
+              <th>Total Cost</th>
+              <th>Delivery</th>
+              <th>Rating</th>
+              <th>Status</th>
+              <th>Evaluation Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in comparison.vendors %}
+              <tr style="{% if v.is_eligible and comparison.recommended_vendor and v.id == comparison.recommended_vendor.id %}background-color: #F0F9F3; font-weight: 500;{% endif %}">
+                <td>
+                  <strong>{{ v.name }}</strong>
+                  {% if comparison.recommended_vendor and v.id == comparison.recommended_vendor.id %}
+                    <br><span class="badge badge-success" style="font-size: 9.5px;">Recommended</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <strong>{{ v.product_name }}</strong><br>
+                  <small style="color: var(--text-secondary);">
+                    {% if v.is_computing and v.ram_gb > 0 %}
+                      {{ v.ram_gb }}GB RAM &bull; {{ v.storage_gb }}GB SSD
+                    {% else %}
+                      {{ v.product_specs|truncate(60) }}
+                    {% endif %}
+                  </small>
+                </td>
+                <td>
+                  <strong>{{ v.formatted_total_cost }}</strong>
+                  {% if v.utilization_pct %}
+                    <br><small style="color: #34745A; font-weight: 600;">{{ v.utilization_pct }}% of budget</small>
+                  {% endif %}
+                </td>
+                <td>
+                  {{ v.delivery_days }} Days
+                  {% if v.delivery_days > current_pr.delivery_deadline_days %}
+                    <span style="color: var(--status-danger-text); font-size: 11px;">(Late)</span>
+                  {% else %}
+                    <span style="color: var(--status-success-text); font-size: 11px;">✓</span>
+                  {% endif %}
+                </td>
+                <td>⭐ {{ v.rating }} &bull; {{ v.warranty_years }}y</td>
+                <td>
+                  {% if v.is_eligible %}
+                    <span class="badge badge-success">Eligible</span>
+                  {% else %}
+                    <span class="badge badge-danger">Rejected</span>
+                  {% endif %}
+                </td>
+                <td style="font-size: 12px; max-width: 220px;">
+                  {% if v.is_eligible %}
+                    <span style="color: var(--status-success-text);">Passes all technical & budget rules.</span>
+                  {% else %}
+                    <ul style="padding-left: 14px; color: var(--status-danger-text); margin: 0;">
+                      {% for r in v.rejection_reasons %}
+                        <li>{{ r }}</li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Recommended Vendor Banner (Placed at Bottom as Requested) -->
+  {% if comparison and comparison.recommended_vendor %}
+    <div class="card" style="border: 2px solid #34745A; background: #FFFFFF; margin-bottom: 24px;">
+      <div class="card-header pastel-mint" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3><span>🏆</span> Agent 2 Recommendation: {{ comparison.recommended_vendor.name }}</h3>
+        <span class="badge badge-success" style="font-size: 13px; padding: 6px 12px;">
+          🎯 {{ comparison.recommended_vendor.utilization_pct }}% Budget (Best Value)
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div>
+            <h4 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+              {{ comparison.recommended_vendor.product_name }}
+            </h4>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+              {{ comparison.recommended_vendor.product_specs }}
+            </p>
+            <div style="font-size: 13px; line-height: 1.9;">
+              <div>⭐ <strong>Quality Rating:</strong> {{ comparison.recommended_vendor.rating }} / 5.0</div>
+              <div>🛡️ <strong>Warranty SLA:</strong> {{ comparison.recommended_vendor.warranty_years }} Years Enterprise Coverage</div>
+              <div>🚚 <strong>Guaranteed Delivery:</strong> {{ comparison.recommended_vendor.delivery_days }} Days (Within {{ current_pr.delivery_deadline_days }}-day SLA)</div>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-ivory); padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Total Evaluated Sourcing Cost</div>
+              <div style="font-size: 28px; font-weight: 800; color: #34745A; margin: 4px 0;">
+                {{ comparison.recommended_vendor.formatted_total_cost }}
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted);">
+                {{ comparison.recommended_vendor.formatted_unit_price }} &times; {{ current_pr.quantity }} units &bull; <strong style="color: #34745A;">{{ comparison.recommended_vendor.utilization_pct }}% of budget</strong>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <a href="{{ url_for('agent_budget_policy', pr_id=current_pr.id) }}" class="btn btn-primary" style="width: 100%;">
+                Proceed to Agent 3: Budget &amp; Policy &rarr;
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; padding: 12px; background: #F4FBF7; border-left: 4px solid #34745A; border-radius: 4px; font-size: 13px; color: #1E4F3B;">
+          <strong>Recommendation Rationale:</strong> {{ comparison.explanation }}
+        </div>
+      </div>
+    </div>
+
+  {% elif comparison %}
+    <div class="card" style="border: 2px solid #A74757; margin-bottom: 24px;">
+      <div class="card-header pastel-blush">
+        <h3><span>⚠️</span> No Eligible Vendors Found</h3>
+        <span class="badge badge-danger">All Rejected</span>
+      </div>
+      <div class="card-body">
+        <p style="color: var(--status-danger-text);">{{ comparison.explanation }}</p>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">
+          Try increasing the budget, extending the delivery SLA, or adjusting the item category in Agent 1.
+        </p>
+        <a href="{{ url_for('agent_requirements') }}" class="btn btn-secondary" style="margin-top: 8px;">&larr; Back to Agent 1</a>
+      </div>
+    </div>
+  {% endif %}
+
+{% else %}
+  <!-- Empty State -->
+  <div class="empty-state">
+    <div class="empty-icon">⚖️</div>
+    <h3>No Purchase Request Available</h3>
+    <p>Please create a purchase request in Agent 1 first. Agent 2 will automatically fetch category-matched vendors.</p>
+    <a href="{{ url_for('agent_requirements') }}" class="btn btn-primary">Go to Agent 1: Requirements</a>
+  </div>
+{% endif %}
+
+{% endblock %}

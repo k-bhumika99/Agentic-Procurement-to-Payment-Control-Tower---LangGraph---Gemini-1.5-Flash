@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Purchase Order {{ po.id }} - Procure Tower</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #28344A;
+      margin: 0;
+      padding: 30px 20px 60px 20px;
+      background: #F4F6F9;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+    .action-bar {
+      max-width: 860px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #FFFFFF;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: 1px solid #E4E7EE;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .action-bar-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #718CC4;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #5B74AB;
+    }
+    .btn-success {
+      background: #34745A;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #285A46;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #CBD5E1;
+      color: #475569;
+    }
+    .btn-outline:hover {
+      background: #F1F5F9;
+    }
+    .po-container {
+      max-width: 860px;
+      margin: 0 auto;
+      border: 1px solid #E4E7EE;
+      padding: 40px;
+      border-radius: 8px;
+      background: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+    .po-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 2px solid #718CC4;
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+    .company-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #28344A;
+    }
+    .po-number-box {
+      text-align: right;
+    }
+    .po-number {
+      font-size: 20px;
+      font-weight: 700;
+      color: #718CC4;
+    }
+    .parties-grid {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      gap: 30px;
+    }
+    .party-card {
+      flex: 1;
+      background: #FAF9F6;
+      border: 1px solid #E4E7EE;
+      padding: 16px;
+      border-radius: 6px;
+    }
+    .party-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #687386;
+      margin-bottom: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    th {
+      background-color: #DCE8F8;
+      color: #28344A;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #E4E7EE;
+    }
+    .total-box {
+      margin-left: auto;
+      width: 300px;
+      margin-bottom: 30px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    .total-row.grand {
+      border-top: 2px solid #28344A;
+      font-size: 16px;
+      font-weight: 800;
+      color: #28344A;
+    }
+    .signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #E4E7EE;
+    }
+    .sign-box {
+      text-align: center;
+      width: 200px;
+    }
+    .sign-line {
+      border-bottom: 1px solid #28344A;
+      margin-bottom: 8px;
+      height: 40px;
+    }
+    @media print {
+      body { padding: 0; background: #FFFFFF; }
+      .action-bar { display: none !important; }
+      .po-container { border: none; padding: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Action & Download Bar -->
+  <div class="action-bar">
+    <div>
+      <a href="{{ url_for('agent_purchase_order', pr_id=pr.id) }}" class="btn btn-outline">
+        &larr; Back to Agent 4
+      </a>
+    </div>
+    <div class="action-bar-buttons">
+      <button class="btn btn-primary" onclick="window.print()">
+        🖨️ Print Purchase Order
+      </button>
+      <button class="btn btn-success" onclick="downloadPDF()">
+        📥 Download Receipt (PDF)
+      </button>
+    </div>
+  </div>
+
+  <div class="po-container" id="printable-po">
+    <div class="po-header">
+      <div>
+        <div class="company-title">Procure Tower Enterprise Corp</div>
+        <div style="color: #687386; font-size: 12px; margin-top: 4px;">
+          Corporate Headquarters, Financial District &bull; GSTIN: 29AAAAA0000A1Z5
+        </div>
+      </div>
+      <div class="po-number-box">
+        <div style="font-size: 11px; text-transform: uppercase; color: #687386; font-weight: 700;">Purchase Order Document</div>
+        <div class="po-number">{{ po.id }}</div>
+        <div style="font-size: 12px; color: #687386; margin-top: 4px;">Issue Date: {{ po.created_at }}</div>
+      </div>
+    </div>
+
+    <div class="parties-grid">
+      <div class="party-card">
+        <div class="party-title">Vendor / Supplier</div>
+        <div style="font-size: 15px; font-weight: 700;">{{ vendor.name }}</div>
+        <div style="color: #687386; font-size: 12.5px; margin-top: 4px;">
+          Product: {{ vendor.product_name }}<br>
+          Specs: {{ vendor.product_specs }}<br>
+          Email: {{ vendor.contact_email }}
+        </div>
+      </div>
+
+      <div class="party-card">
+        <div class="party-title">Ship To / Billing Entity</div>
+        <div style="font-size: 15px; font-weight: 700;">Procure Tower - {{ pr.department }} Dept</div>
+        <div style="color: #687386; font-size: 12.5px; margin-top: 4px;">
+          Technology Park Dock 4, Enterprise City<br>
+          Requisition Ref: {{ pr.id }}<br>
+          Authorized Approver: Anita Sharma (Dept Manager)
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Quantity</th>
+          <th>Unit Rate</th>
+          <th>Total Value (INR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <strong>{{ po.item_name }}</strong><br>
+            <small style="color: #687386;">{{ vendor.product_name }} - {{ vendor.product_specs }} ({{ vendor.warranty_years }} Years Enterprise OEM Warranty)</small>
+          </td>
+          <td><strong>{{ po.quantity }}</strong> units</td>
+          <td>{{ po.formatted_unit_price }}</td>
+          <td><strong>{{ po.formatted_total }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="total-box">
+      <div class="total-row">
+        <span>Gross Subtotal:</span>
+        <span>{{ po.formatted_total }}</span>
+      </div>
+      <div class="total-row">
+        <span>Taxes &amp; Logistics:</span>
+        <span>Included (Net)</span>
+      </div>
+      <div class="total-row grand">
+        <span>Total Payable:</span>
+        <span>{{ po.formatted_total }}</span>
+      </div>
+    </div>
+
+    <div style="background: #FAF9F6; border: 1px solid #E4E7EE; padding: 14px; border-radius: 6px; font-size: 12px; color: #687386; margin-bottom: 20px;">
+      <strong>Terms &amp; Governance Certification:</strong><br>
+      1. Delivery Terms: {{ po.delivery_terms }}<br>
+      2. Payment Terms: {{ po.payment_terms }}<br>
+      3. Supplier invoices must reference {{ po.id }} and are subject to mandatory 3-way matching with warehouse Goods Receipt Notes prior to payment settlement.
+    </div>
+
+    <div class="signatures">
+      <div class="sign-box">
+        <div class="sign-line"></div>
+        <div style="font-weight: 700; font-size: 12px;">Authorized Buyer Signatory</div>
+        <div style="color: #687386; font-size: 11px;">Procure Tower Enterprise Corp</div>
+      </div>
+
+      <div class="sign-box">
+        <div class="sign-line"></div>
+        <div style="font-weight: 700; font-size: 12px;">Vendor Acceptance</div>
+        <div style="color: #687386; font-size: 11px;">{{ vendor.name }}</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function downloadPDF() {
+      // In all standard modern browsers window.print() gives "Save as PDF" option
+      window.print();
+    }
+  </script>
+</body>
+</html>
